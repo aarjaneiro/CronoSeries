@@ -19,7 +19,6 @@ TODO:
 -----
 1. Implement tests.
 2. Add examples.
-3. (Depending on demand) Remove Iridium extensions
 
 **Interested in helping out?** 
 
