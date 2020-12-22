@@ -18,6 +18,25 @@ namespace CronoSeries.ABMath.ModelFramework.Transforms
         public int CurrentSelection { get; set; }
         public int NumberOfInputs { get; set; }
 
+        public int NumAuxiliaryFunctions()
+        {
+            return 1;
+        }
+
+        public string AuxiliaryFunctionName(int index)
+        {
+            if (index == 0)
+                return "Rotate";
+            throw new ArgumentException();
+        }
+
+        public string AuxiliaryFunctionHelp(int index)
+        {
+            if (index == 0)
+                return "Switches next input to be the current output";
+            throw new ArgumentException();
+        }
+
         public override int NumInputs()
         {
             return NumberOfInputs;
@@ -31,7 +50,7 @@ namespace CronoSeries.ABMath.ModelFramework.Transforms
         public override string GetInputName(int socket)
         {
             if (socket >= 0 && socket < NumberOfInputs)
-               return string.Format("Input #{0}", socket + 1);
+                return string.Format("Input #{0}", socket + 1);
             throw new SocketException();
         }
 
@@ -74,38 +93,18 @@ namespace CronoSeries.ABMath.ModelFramework.Transforms
             throw new SocketException();
         }
 
-        public int NumAuxiliaryFunctions()
-        {
-            return 1;
-        }
-
-        public string AuxiliaryFunctionName(int index)
-        {
-            if (index == 0)
-                return "Rotate";
-            throw new ArgumentException();
-        }
-
-        public string AuxiliaryFunctionHelp(int index)
-        {
-            if (index == 0)
-                return "Switches next input to be the current output";
-            throw new ArgumentException();
-        }
-
         public override List<Type> GetAllowedInputTypesFor(int socket)
         {
             if (socket >= NumInputs())
                 throw new SocketException();
-            return new List<Type> { typeof(TimeSeries), typeof(MVTimeSeries) };
+            return new List<Type> {typeof(TimeSeries), typeof(MVTimeSeries)};
         }
 
         public override List<Type> GetOutputTypesFor(int socket)
         {
             if (socket != 0)
                 throw new SocketException();
-            return new List<Type> { typeof(TimeSeries), typeof(MVTimeSeries) };
+            return new List<Type> {typeof(TimeSeries), typeof(MVTimeSeries)};
         }
-
     }
 }

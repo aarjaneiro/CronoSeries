@@ -9,16 +9,15 @@ namespace CronoSeries.ABMath.ModelFramework.Transforms
     [Serializable]
     public class PointRemoverTransform : TimeSeriesTransformation
     {
-        [Category("Parameter"), Description("Lower end of range to keep")]
-        public double LowerValue { get; set; }
-        [Category("Parameter"), Description("Upper end of range to keep")]
-        public double UpperValue { get; set; }
-
         public PointRemoverTransform()
         {
             LowerValue = 0.01;
             UpperValue = 10000;
         }
+
+        [Category("Parameter")] [Description("Lower end of range to keep")] public double LowerValue { get; set; }
+
+        [Category("Parameter")] [Description("Upper end of range to keep")] public double UpperValue { get; set; }
 
         public override int NumInputs()
         {
@@ -70,15 +69,16 @@ namespace CronoSeries.ABMath.ModelFramework.Transforms
 
                 foreach (var ts in tsList)
                 {
-                    var stripped = new TimeSeries() {Title = ts.Title};
-                    for (int t = 0; t < ts.Count; ++t)
+                    var stripped = new TimeSeries {Title = ts.Title};
+                    for (var t = 0; t < ts.Count; ++t)
                         if (!(ts[t] < LowerValue || ts[t] > UpperValue))
                             stripped.Add(ts.TimeStamp(t), ts[t], true);
 
                     outputs.Add(stripped);
                 }
+
                 if (outputs.Count > 0)
-                   IsValid = true;
+                    IsValid = true;
             }
         }
 
@@ -86,15 +86,14 @@ namespace CronoSeries.ABMath.ModelFramework.Transforms
         {
             if (socket != 0)
                 throw new SocketException();
-            return new List<Type> { typeof(TimeSeries), typeof(MVTimeSeries) };
+            return new List<Type> {typeof(TimeSeries), typeof(MVTimeSeries)};
         }
 
         public override List<Type> GetOutputTypesFor(int socket)
         {
             if (socket != 0)
                 throw new SocketException();
-            return new List<Type> { typeof(TimeSeries), typeof(MVTimeSeries) };
+            return new List<Type> {typeof(TimeSeries), typeof(MVTimeSeries)};
         }
-
     }
 }

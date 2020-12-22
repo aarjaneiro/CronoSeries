@@ -27,22 +27,12 @@ using MathNet.Numerics.LinearAlgebra;
 namespace CronoSeries.ABMath.ModelFramework.Data
 {
     /// <summary>
-    /// This class represents longitudinal data, that is, a collection of time series.
+    ///     This class represents longitudinal data, that is, a collection of time series.
     /// </summary>
     [Serializable]
     public class Longitudinal : IConnectable
     {
         private List<TimeSeries> Components;
-
-        public TimeSeries this[int idx]
-        {
-           get { return Components[idx]; }
-        }
-
-        public int MaxCount
-        {
-            get; protected set;
-        }
 
         public Longitudinal()
         {
@@ -53,7 +43,7 @@ namespace CronoSeries.ABMath.ModelFramework.Data
         public Longitudinal(IEnumerable<TimeSeries> initialComponents)
         {
             Components = new List<TimeSeries>();
-            foreach (TimeSeries ts in initialComponents)
+            foreach (var ts in initialComponents)
             {
                 Components.Add(ts);
                 if (ts.Count > MaxCount)
@@ -61,38 +51,53 @@ namespace CronoSeries.ABMath.ModelFramework.Data
             }
         }
 
+        public TimeSeries this[int idx] => Components[idx];
+
+        public int MaxCount { get; protected set; }
+
+        public int Count
+        {
+            get
+            {
+                if (Components == null) return 0;
+                return Components.Count;
+            }
+        }
+
         public double SampleMean()
         {
             double sum = 0;
-            int count = 0;
+            var count = 0;
             foreach (var c in Components)
             {
-                for (int t = 0; t < c.Count; ++t)
+                for (var t = 0; t < c.Count; ++t)
                     sum += c[t];
                 count += c.Count;
             }
-            return sum/count;
+
+            return sum / count;
         }
 
         public Vector<double> SampleACF(int maxLag)
         {
             var retval = Vector<double>.Build.Dense(maxLag + 1);
             retval[0] = 1.0;
-            int m = MaxCount;
-            double mean = SampleMean();
+            var m = MaxCount;
+            var mean = SampleMean();
 
-            for (int h=0 ; h<=maxLag ; ++h)
+            for (var h = 0; h <= maxLag; ++h)
             {
-                int tc = m - h;
+                var tc = m - h;
                 double tx = 0;
-                int localCount = 0;
-                for (int i=0 ; i<Count ; ++i)
-                  for (int t=0 ; t<tc ; ++t)
-                      if (t+h < Components[i].Count)
-                      {
-                         tx += (Components[i][t] - mean)*(Components[i][t + h] - mean);
-                         ++localCount;
-                      }
+                var localCount = 0;
+                for (var i = 0; i < Count; ++i)
+                for (var t = 0; t < tc; ++t)
+                    if (t + h < Components[i].Count)
+                    {
+                        tx += (Components[i][t] - mean) * (Components[i][t + h] - mean);
+                        ++localCount;
+                    }
+
                 if (localCount > 0)
                     tx /= localCount;
                 else
@@ -135,7 +140,7 @@ namespace CronoSeries.ABMath.ModelFramework.Data
 
         public List<Type> GetOutputTypesFor(int socket)
         {
-            return new List<Type> {typeof (Longitudinal)};
+            return new List<Type> {typeof(Longitudinal)};
         }
 
         public bool InputIsFree(int socket)
@@ -178,19 +183,10 @@ namespace CronoSeries.ABMath.ModelFramework.Data
 
         public string ToolTipText
         {
-            get { return toolTipText; }
-            set { toolTipText = value; }
+            get => toolTipText;
+            set => toolTipText = value;
         }
 
         #endregion
-
-        public int Count
-        {
-            get
-            {
-                if (Components == null) return 0;
-                return Components.Count;
-            }
-        }
     }
 }

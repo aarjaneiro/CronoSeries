@@ -9,19 +9,24 @@ namespace CronoSeries.ABMath.ModelFramework.Transforms
     [Serializable]
     public class FilterTransform : TimeSeriesTransformation
     {
-        [Category("Parameter"), Description("Autoregressive Filter Coefficients")]
-        public double[] arCoeffs { get; set; }
-        [Category("Parameter"), Description("Moving Average Filter Coefficients")]
-        public double[] maCoeffs { get; set; }
-        [Category("Parameter"), Description("If non-zero, uses the specified time interval instead of just using successive data points")]
-        public TimeSpan TimeInterval { get; set; }
-
         public FilterTransform()
         {
             arCoeffs = new[] {1.0};
             maCoeffs = new[] {1.0};
             TimeInterval = new TimeSpan(0);
         }
+
+        [Category("Parameter")]
+        [Description("Autoregressive Filter Coefficients")]
+        public double[] arCoeffs { get; set; }
+
+        [Category("Parameter")]
+        [Description("Moving Average Filter Coefficients")]
+        public double[] maCoeffs { get; set; }
+
+        [Category("Parameter")]
+        [Description("If non-zero, uses the specified time interval instead of just using successive data points")]
+        public TimeSpan TimeInterval { get; set; }
 
         public override int NumInputs()
         {
@@ -66,42 +71,43 @@ namespace CronoSeries.ABMath.ModelFramework.Transforms
         {
             var retval = new TimeSeries();
 
-            int maOrder = maCoeffs.Length;
-            int arOrder = arCoeffs.Length;
+            var maOrder = maCoeffs.Length;
+            var arOrder = arCoeffs.Length;
 
             double arSum = 0;
-            for (int i = 1; i < arOrder; ++i)
+            for (var i = 1; i < arOrder; ++i)
                 arSum += arCoeffs[i];
             double maSum = 0;
-            for (int i = 0; i < maOrder; ++i)
+            for (var i = 0; i < maOrder; ++i)
                 maSum += maCoeffs[i];
 
-                // now go through and apply filter
-                for (int t = 0; t < ts.Count; ++t)
+            // now go through and apply filter
+            for (var t = 0; t < ts.Count; ++t)
+            {
+                var tx = 0.0;
+                if (TimeInterval.Ticks == 0) // apply the filter to successive data points
                 {
-                    double tx = 0.0;
-                    if (TimeInterval.Ticks == 0) // apply the filter to successive data points
-                    {
-                        // get MA part
-                        for (int i = 0; i < maOrder; ++i)
-                            tx += t >= i ? maCoeffs[i] * ts[t - i] : ts[0];
-                        // get AR part
-                        for (int i = 1; i < arOrder; ++i)
-                            tx += t >= i ? arCoeffs[i] * retval[t - i] : ts[0];
-                        tx /= (arSum + maSum);
-                    }
-                    else // apply the filter to data points at specified sampling interval
-                    {
-                        // get MA part
-                        for (int i = 0; i < maOrder; ++i)
-                            tx += maCoeffs[i] * ts.ValueAtTime(ts.TimeStamp(t) - new TimeSpan(i * TimeInterval.Ticks));
-                        // get AR part
-                        for (int i = 1; i < arOrder; ++i)
-                            tx += arCoeffs[i] * retval.ValueAtTime(ts.TimeStamp(t) - new TimeSpan(i * TimeInterval.Ticks));
-                        tx /= (arSum + maSum);
-                    }
-                    retval.Add(ts.TimeStamp(t), tx, false);
+                    // get MA part
+                    for (var i = 0; i < maOrder; ++i)
+                        tx += t >= i ? maCoeffs[i] * ts[t - i] : ts[0];
+                    // get AR part
+                    for (var i = 1; i < arOrder; ++i)
+                        tx += t >= i ? arCoeffs[i] * retval[t - i] : ts[0];
+                    tx /= arSum + maSum;
                 }
+                else // apply the filter to data points at specified sampling interval
+                {
+                    // get MA part
+                    for (var i = 0; i < maOrder; ++i)
+                        tx += maCoeffs[i] * ts.ValueAtTime(ts.TimeStamp(t) - new TimeSpan(i * TimeInterval.Ticks));
+                    // get AR part
+                    for (var i = 1; i < arOrder; ++i)
+                        tx += arCoeffs[i] * retval.ValueAtTime(ts.TimeStamp(t) - new TimeSpan(i * TimeInterval.Ticks));
+                    tx /= arSum + maSum;
+                }
+
+                retval.Add(ts.TimeStamp(t), tx, false);
+            }
 
             return retval;
         }
@@ -127,14 +133,14 @@ namespace CronoSeries.ABMath.ModelFramework.Transforms
         {
             if (socket >= NumInputs())
                 throw new SocketException();
-            return new List<Type> { typeof(TimeSeries), typeof(MVTimeSeries) };
+            return new List<Type> {typeof(TimeSeries), typeof(MVTimeSeries)};
         }
 
         public override List<Type> GetOutputTypesFor(int socket)
         {
             if (socket >= NumOutputs())
                 throw new SocketException();
-            return new List<Type> { typeof(TimeSeries), typeof(MVTimeSeries) };
+            return new List<Type> {typeof(TimeSeries), typeof(MVTimeSeries)};
         }
     }
 }

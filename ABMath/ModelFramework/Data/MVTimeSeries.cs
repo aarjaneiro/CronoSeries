@@ -1,4 +1,5 @@
 ﻿#region License Info
+
 //Component of Cronos Package, http://www.codeplex.com/cronos
 //Copyright (C) 2009 Anthony Brockwell
 
@@ -15,6 +16,7 @@
 //You should have received a copy of the GNU General Public License
 //along with this program; if not, write to the Free Software
 //Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
 #endregion
 
 
@@ -40,12 +42,9 @@ namespace CronoSeries.ABMath.ModelFramework.Data
             SubTitle = new string[dimension];
         }
 
-        public string[] SubTitle
-        { get; set; }
-
 
         /// <summary>
-        /// constructor that builds a single multivariate time series from multiple univariate time series
+        ///     constructor that builds a single multivariate time series from multiple univariate time series
         /// </summary>
         /// <param name="components"></param>
         /// <param name="sampleMissing"></param>
@@ -54,26 +53,26 @@ namespace CronoSeries.ABMath.ModelFramework.Data
             Dimension = components.Count;
 
             SubTitle = new string[Dimension];
-            for (int i = 0 ; i<Dimension ; ++i)
+            for (var i = 0; i < Dimension; ++i)
                 SubTitle[i] = components[i].Title;
 
-            var indices = new int[Dimension];   // these are the indices of the last one added (-1 if none yet)
-            for (int i = 0; i < Dimension; ++i)
+            var indices = new int[Dimension]; // these are the indices of the last one added (-1 if none yet)
+            for (var i = 0; i < Dimension; ++i)
                 indices[i] = -1;
 
-            bool done = false;
+            var done = false;
             while (!done)
             {
                 // get timestamp for next point
-                DateTime minTime = DateTime.MaxValue;
-                for (int i = 0; i < Dimension; ++i)
+                var minTime = DateTime.MaxValue;
+                for (var i = 0; i < Dimension; ++i)
                     if (indices[i] < components[i].Count - 1)
                         if (components[i].TimeStamp(indices[i] + 1) < minTime)
                             minTime = components[i].TimeStamp(indices[i] + 1);
 
                 // now construct the new point
                 var newPt = new double[Dimension];
-                for (int i = 0; i < Dimension; ++i)
+                for (var i = 0; i < Dimension; ++i)
                     if (indices[i] < components[i].Count - 1)
                         if (components[i].TimeStamp(indices[i] + 1) == minTime)
                         {
@@ -81,13 +80,15 @@ namespace CronoSeries.ABMath.ModelFramework.Data
                             ++indices[i];
                         }
                         else
+                        {
                             newPt[i] = double.NaN;
+                        }
                     else
                         newPt[i] = double.NaN;
 
                 // add it
                 if (sampleMissing)
-                    for (int i = 0; i < Dimension; ++i)
+                    for (var i = 0; i < Dimension; ++i)
                         if (double.IsNaN(newPt[i]))
                             newPt[i] = components[i].ValueAtTime(minTime);
 
@@ -95,109 +96,12 @@ namespace CronoSeries.ABMath.ModelFramework.Data
 
                 // and determine if we are done
                 done = true;
-                for (int i=0 ; i<Dimension ; ++i)
-                    done &= (indices[i] >= components[i].Count-1);
+                for (var i = 0; i < Dimension; ++i)
+                    done &= indices[i] >= components[i].Count - 1;
             }
         }
 
-        /// <summary>
-        /// returns total number of NaNs (maximum is Count*Dimension)
-        /// </summary>
-        /// <returns></returns>
-        public int NaNCount()
-        {
-            int count = 0;
-            for (int t = 0; t < Count; ++t)
-                for (int j = 0; j < Dimension; ++j)
-                    if (double.IsNaN(values[t][j]))
-                        ++count;
-            return count;
-        }
-
-
-        /// <summary>
-        /// converts the multivariate time series object into a list of newly created (univariate) timeseries objects
-        /// </summary>
-        /// <returns></returns>
-        public List<TimeSeries> ExtractList()
-        {
-            var retval = new List<TimeSeries>(Dimension);
-            for (int i=0 ; i<Dimension ; ++i)
-                retval.Add(new TimeSeries());
-
-            for (int i = 0; i < Dimension; ++i)
-            {
-                retval[i].Title = $"Comp.#{(i + 1)}";
-                if (SubTitle != null)
-                    if (SubTitle.Length > i)
-                       retval[i].Title = SubTitle[i];
-                for (int t = 0; t < Count; ++t)
-                {
-                    double tx = this[t][i];
-                    if (!double.IsNaN(tx))
-                        retval[i].Add(TimeStamp(t), tx, false);
-                }
-            }
-
-            return retval;
-        }     
-
-        public Vector<double> SampleMean()
-        {
-            var retval = Vector<double>.Build.Dense(Dimension);
-            int[] numMissing = new int[Dimension];
-            for (int t=0 ; t<Count ; ++t)
-                for (int j = 0; j < Dimension; ++j)
-                    if (!double.IsNaN(values[t][j]))
-                        retval[j] += values[t][j];
-                    else
-                        ++numMissing[j];
-            for (int j = 0; j < Dimension; ++j )
-                if (Count - numMissing[j]>0)
-                   retval[j] *= 1.0 / (Count - numMissing[j]);
-            return retval;
-        }
-   
-        public Matrix<double>[] ComputeACF(int maxLag, bool normalize)
-        {
-            var acf = new Matrix<double>[maxLag + 1];
-
-            int i, j, n = Count;
-            if (n == 0)
-                return null;
-
-            var mean = SampleMean();
-
-            // compute the sample autocovariance function.
-            for (i = 0; i <= maxLag; ++i)
-            {
-                var total = Matrix<double>.Build.Dense(Dimension, Dimension);
-                for (j = i; j < n; ++j)
-                    for (int k = 0; k < Dimension; ++k)
-                        for (int l = 0; l < Dimension; ++l)
-                        {
-                            var tx = (values[j][k] - mean[k])*(values[j - i][l] - mean[l]);
-                            if (!double.IsNaN(tx))
-                                total[k, l] += tx;
-                        }
-                acf[i] = total*(1.0/n);
-            }
-
-            // now normalize the sample ACFs
-            if (normalize)
-            {
-                var diags = new double[Dimension];
-                for (i = 0; i < Dimension; ++i)
-                    diags[i] = Math.Sqrt(acf[0][i, i]);
-
-                for (i = 0; i <= maxLag; ++i)
-                    for (j = 0; j < Dimension; ++j)
-                        for (int k = 0; k < Dimension; ++k)
-                            acf[i][j, k] /= (diags[j]*diags[k]);
-            }
-
-            return acf;
-        }
+        public string[] SubTitle { get; set; }
 
         public string CreateFullString(int detailLevel)
         {
@@ -208,30 +112,33 @@ namespace CronoSeries.ABMath.ModelFramework.Data
             {
                 if (detailLevel > 1)
                     sb.AppendFormat("Date\t");
-                for (int i = 0; i < Dimension; ++i)
+                for (var i = 0; i < Dimension; ++i)
                 {
                     if (i != 0)
                         sb.Append("\t");
                     if (SubTitle[i] != null)
                         sb.AppendFormat(SubTitle[i]);
                 }
+
                 sb.AppendLine();
             }
 
             // now copy data
-            for (int t = 0; t < Count; ++t)
+            for (var t = 0; t < Count; ++t)
             {
-                DateTime timeStamp = TimeStamp(t);
+                var timeStamp = TimeStamp(t);
                 if (detailLevel > 1)
                     sb.AppendFormat("{0}\t", timeStamp.ToString("MM/dd/yyyy HH:mm:ss.ffff"));
-                for (int i = 0; i < Dimension; ++i)
+                for (var i = 0; i < Dimension; ++i)
                 {
                     if (i != 0)
                         sb.Append("\t");
                     sb.AppendFormat("{0:0.000000}", values[t][i]);
                 }
+
                 sb.AppendLine();
             }
+
             return sb.ToString();
         }
 
@@ -256,6 +163,106 @@ namespace CronoSeries.ABMath.ModelFramework.Data
             Dimension = mv.Dimension;
         }
 
+        /// <summary>
+        ///     returns total number of NaNs (maximum is Count*Dimension)
+        /// </summary>
+        /// <returns></returns>
+        public int NaNCount()
+        {
+            var count = 0;
+            for (var t = 0; t < Count; ++t)
+            for (var j = 0; j < Dimension; ++j)
+                if (double.IsNaN(values[t][j]))
+                    ++count;
+            return count;
+        }
+
+
+        /// <summary>
+        ///     converts the multivariate time series object into a list of newly created (univariate) timeseries objects
+        /// </summary>
+        /// <returns></returns>
+        public List<TimeSeries> ExtractList()
+        {
+            var retval = new List<TimeSeries>(Dimension);
+            for (var i = 0; i < Dimension; ++i)
+                retval.Add(new TimeSeries());
+
+            for (var i = 0; i < Dimension; ++i)
+            {
+                retval[i].Title = $"Comp.#{i + 1}";
+                if (SubTitle != null)
+                    if (SubTitle.Length > i)
+                        retval[i].Title = SubTitle[i];
+                for (var t = 0; t < Count; ++t)
+                {
+                    var tx = this[t][i];
+                    if (!double.IsNaN(tx))
+                        retval[i].Add(TimeStamp(t), tx, false);
+                }
+            }
+
+            return retval;
+        }
+
+        public Vector<double> SampleMean()
+        {
+            var retval = Vector<double>.Build.Dense(Dimension);
+            var numMissing = new int[Dimension];
+            for (var t = 0; t < Count; ++t)
+            for (var j = 0; j < Dimension; ++j)
+                if (!double.IsNaN(values[t][j]))
+                    retval[j] += values[t][j];
+                else
+                    ++numMissing[j];
+            for (var j = 0; j < Dimension; ++j)
+                if (Count - numMissing[j] > 0)
+                    retval[j] *= 1.0 / (Count - numMissing[j]);
+            return retval;
+        }
+
+        public Matrix<double>[] ComputeACF(int maxLag, bool normalize)
+        {
+            var acf = new Matrix<double>[maxLag + 1];
+
+            int i, j, n = Count;
+            if (n == 0)
+                return null;
+
+            var mean = SampleMean();
+
+            // compute the sample autocovariance function.
+            for (i = 0; i <= maxLag; ++i)
+            {
+                var total = Matrix<double>.Build.Dense(Dimension, Dimension);
+                for (j = i; j < n; ++j)
+                for (var k = 0; k < Dimension; ++k)
+                for (var l = 0; l < Dimension; ++l)
+                {
+                    var tx = (values[j][k] - mean[k]) * (values[j - i][l] - mean[l]);
+                    if (!double.IsNaN(tx))
+                        total[k, l] += tx;
+                }
+
+                acf[i] = total * (1.0 / n);
+            }
+
+            // now normalize the sample ACFs
+            if (normalize)
+            {
+                var diags = new double[Dimension];
+                for (i = 0; i < Dimension; ++i)
+                    diags[i] = Math.Sqrt(acf[0][i, i]);
+
+                for (i = 0; i <= maxLag; ++i)
+                for (j = 0; j < Dimension; ++j)
+                for (var k = 0; k < Dimension; ++k)
+                    acf[i][j, k] /= diags[j] * diags[k];
+            }
+
+            return acf;
+        }
+
         #region IConnectable Members
 
         public int NumInputs()
@@ -270,7 +277,7 @@ namespace CronoSeries.ABMath.ModelFramework.Data
 
         public virtual List<Type> GetOutputTypesFor(int socket)
         {
-            return new List<Type> { typeof(MVTimeSeries) };
+            return new List<Type> {typeof(MVTimeSeries)};
         }
 
         public bool InputIsFree(int socket)
@@ -280,7 +287,7 @@ namespace CronoSeries.ABMath.ModelFramework.Data
 
         public bool SetInput(int socket, object item, StringBuilder failMsg)
         {
-            return false;  // cannot set input
+            return false; // cannot set input
         }
 
         public object GetOutput(int socket)
@@ -328,10 +335,11 @@ namespace CronoSeries.ABMath.ModelFramework.Data
         //}
 
         private string toolTipText;
+
         public string ToolTipText
         {
-            get { return toolTipText; }
-            set { toolTipText = value; }
+            get => toolTipText;
+            set => toolTipText = value;
         }
 
         public int NumAuxiliaryFunctions()

@@ -26,7 +26,7 @@ namespace CronoSeries.ABMath.ModelFramework.Transforms
         public override string GetInputName(int socket)
         {
             if (socket == 0)
-               return "Input";
+                return "Input";
             throw new SocketException();
         }
 
@@ -71,14 +71,14 @@ namespace CronoSeries.ABMath.ModelFramework.Transforms
         {
             if (socket > 0)
                 throw new SocketException();
-            return new List<Type> { typeof(TimeSeries), typeof(MVTimeSeries) };
+            return new List<Type> {typeof(TimeSeries), typeof(MVTimeSeries)};
         }
 
         public override List<Type> GetOutputTypesFor(int socket)
         {
             if (socket < 0 || socket >= NumOutputs())
                 throw new SocketException();
-            return new List<Type> { typeof(TimeSeries), typeof(MVTimeSeries) };
+            return new List<Type> {typeof(TimeSeries), typeof(MVTimeSeries)};
         }
     }
 }

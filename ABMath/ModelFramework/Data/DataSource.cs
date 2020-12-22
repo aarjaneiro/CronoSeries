@@ -1,4 +1,5 @@
 ﻿#region License Info
+
 //Component of Cronos Package, http://www.codeplex.com/cronos
 //Copyright (C) 2009 Anthony Brockwell
 
@@ -15,6 +16,7 @@
 //You should have received a copy of the GNU General Public License
 //along with this program; if not, write to the Free Software
 //Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
 #endregion
 
 using System;
@@ -26,24 +28,15 @@ using System.Text;
 namespace CronoSeries.ABMath.ModelFramework.Data
 {
     /// <summary>
-    /// This class provides a mechanism for connection to external sources of data.
-    /// The simplest example is a connection to a .csv file, but more interesting examples
-    /// could include connections by network to a broker's historical data feed,
-    /// a connection to a local database of time series, etc.
+    ///     This class provides a mechanism for connection to external sources of data.
+    ///     The simplest example is a connection to a .csv file, but more interesting examples
+    ///     could include connections by network to a broker's historical data feed,
+    ///     a connection to a local database of time series, etc.
     /// </summary>
     [Serializable]
     public abstract class DataSource : IConnectable
     {
-        [Browsable(false)]
-        public object Data 
-        { get; protected set; }
-
-        /// <summary>
-        /// returns true if data retrieval is successful
-        /// </summary>
-        /// <param name="infoMessage">returns any log information about retrieval</param>
-        /// <returns></returns>
-        public abstract bool RefreshFromSource(out string infoMessage);
+        [Browsable(false)] public object Data { get; protected set; }
 
         public int NumInputs()
         {
@@ -114,10 +107,13 @@ namespace CronoSeries.ABMath.ModelFramework.Data
         //    return null;
         //}
 
-        [Browsable(false)]
-        public string ToolTipText
-        {
-            get; set;
-        }
+        [Browsable(false)] public string ToolTipText { get; set; }
+
+        /// <summary>
+        ///     returns true if data retrieval is successful
+        /// </summary>
+        /// <param name="infoMessage">returns any log information about retrieval</param>
+        /// <returns></returns>
+        public abstract bool RefreshFromSource(out string infoMessage);
     }
 }

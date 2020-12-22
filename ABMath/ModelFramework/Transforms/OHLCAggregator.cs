@@ -10,17 +10,18 @@ namespace CronoSeries.ABMath.ModelFramework.Transforms
     [Serializable]
     public class OHLCAggregator : TimeSeriesTransformation
     {
-        [Category("Parameter"), Description("Period over which to aggregate")]
-        public TimeSpan Period { get; set; }
-        [Category("Parameter"), Description("Phase (relative to midnight Jan. 1st, 2001)")]
-        public TimeSpan Phase { get; set; }
-
         private MVTimeSeries combined;
 
         public OHLCAggregator()
         {
             Period = new TimeSpan(0, 15, 0);
         }
+
+        [Category("Parameter")] [Description("Period over which to aggregate")] public TimeSpan Period { get; set; }
+
+        [Category("Parameter")]
+        [Description("Phase (relative to midnight Jan. 1st, 2001)")]
+        public TimeSpan Phase { get; set; }
 
         public override int NumInputs()
         {
@@ -43,7 +44,7 @@ namespace CronoSeries.ABMath.ModelFramework.Transforms
         {
             if (socket != 0)
                 throw new SocketException();
-            if (!IsValid || combined==null)
+            if (!IsValid || combined == null)
                 return null;
             return combined;
         }
@@ -72,11 +73,11 @@ namespace CronoSeries.ABMath.ModelFramework.Transforms
 
         private DateTime PhaseAdjust(DateTime dt)
         {
-            long baseTicks = new DateTime(2001, 1, 1).Ticks;
-            long periodTicks = Period.Ticks;
-            long diffTicks = dt.Ticks - baseTicks;
-            long intervals = (long)Math.Floor(diffTicks/(double) periodTicks);
-            return new DateTime(baseTicks + intervals*periodTicks + Phase.Ticks);
+            var baseTicks = new DateTime(2001, 1, 1).Ticks;
+            var periodTicks = Period.Ticks;
+            var diffTicks = dt.Ticks - baseTicks;
+            var intervals = (long) Math.Floor(diffTicks / (double) periodTicks);
+            return new DateTime(baseTicks + intervals * periodTicks + Phase.Ticks);
         }
 
         public override void Recompute()
@@ -87,13 +88,13 @@ namespace CronoSeries.ABMath.ModelFramework.Transforms
 
             var series = GetInputBundle();
             if (series.Count != 4 && series.Count != 5)
-                return;  // something wrong!, needs open,high,low,close (and optional volume)
+                return; // something wrong!, needs open,high,low,close (and optional volume)
 
             var open = series[0];
             var high = series[1];
             var low = series[2];
             var close = series[3];
-            TimeSeries volume = series.Count == 5 ? series[4] : null;
+            var volume = series.Count == 5 ? series[4] : null;
 
             combined = new MVTimeSeries(series.Count);
 
@@ -101,16 +102,16 @@ namespace CronoSeries.ABMath.ModelFramework.Transforms
 
             accumulated[0] = open[0];
             accumulated[1] = high[0];
-            accumulated[2] = low[0];  // low
+            accumulated[2] = low[0]; // low
             accumulated[3] = close[0];
             if (series.Count == 5)
                 accumulated[4] = 0;
 
-            DateTime initialTime = PhaseAdjust(open.TimeStamp(0));  // initial time for current bar
+            var initialTime = PhaseAdjust(open.TimeStamp(0)); // initial time for current bar
 
-            for (int t = 0; t < open.Count; ++t )
+            for (var t = 0; t < open.Count; ++t)
             {
-                TimeSpan intoBar = open.TimeStamp(t) - initialTime;
+                var intoBar = open.TimeStamp(t) - initialTime;
                 if (intoBar >= Period)
                 {
                     // dump the previous bar and reset things
@@ -124,12 +125,14 @@ namespace CronoSeries.ABMath.ModelFramework.Transforms
                         accumulated[4] = 0;
                     initialTime = PhaseAdjust(open.TimeStamp(t));
                 }
+
                 accumulated[3] = close[t];
                 accumulated[1] = Math.Max(accumulated[1], high[t]);
                 accumulated[2] = Math.Min(accumulated[2], low[t]);
                 if (volume != null)
                     accumulated[4] += volume[t];
             }
+
             IsValid = true;
         }
 
@@ -137,14 +140,14 @@ namespace CronoSeries.ABMath.ModelFramework.Transforms
         {
             if (socket != 0)
                 throw new SocketException();
-            return new List<Type> { typeof(MVTimeSeries) };
+            return new List<Type> {typeof(MVTimeSeries)};
         }
 
         public override List<Type> GetOutputTypesFor(int socket)
         {
             if (socket != 0)
                 throw new SocketException();
-            return new List<Type> { typeof(MVTimeSeries) };
+            return new List<Type> {typeof(MVTimeSeries)};
         }
     }
 }

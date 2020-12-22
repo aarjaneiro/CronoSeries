@@ -34,13 +34,13 @@ using MathNet.Numerics.Random;
 namespace CronoSeries.ABMath.ModelFramework.Models
 {
     /// <summary>
-    /// This is really like an ARMA model in many respects, but you specify the square root of the variance (sigma),
-    /// and the autocorrelations at lags 1...maxLag, instead of specifying autoregressive and moving average polynomials.
-    /// This means that we have to fall back on the Durbin-Levinson recursions for likelihood computations, instead of
-    /// using more efficient recursions from Brockwell & Davis.
+    ///     This is really like an ARMA model in many respects, but you specify the square root of the variance (sigma),
+    ///     and the autocorrelations at lags 1...maxLag, instead of specifying autoregressive and moving average polynomials.
+    ///     This means that we have to fall back on the Durbin-Levinson recursions for likelihood computations, instead of
+    ///     using more efficient recursions from Brockwell & Davis.
     /// </summary>
     [Serializable]
-    public class ACFModel : UnivariateTimeSeriesModel, IMLEEstimable, IRealTimePredictable//, IExtraFunctionality
+    public class ACFModel : UnivariateTimeSeriesModel, IMLEEstimable, IRealTimePredictable //, IExtraFunctionality
     {
         private const double muScale = 10.0;
         private int maxLag;
@@ -48,7 +48,7 @@ namespace CronoSeries.ABMath.ModelFramework.Models
         [NonSerialized] protected TimeSeries oneStepPredictors; // timestamped to align with what they are predicting
 
         [NonSerialized] protected TimeSeries oneStepPredictorsAtAvailability;
-                                             // timestamped at the point the predictor is available
+        // timestamped at the point the predictor is available
 
         [NonSerialized] protected TimeSeries oneStepPredStd; // also aligned with what they are predicting
         [NonSerialized] protected TimeSeries unstandardizedResiduals;
@@ -74,14 +74,20 @@ namespace CronoSeries.ABMath.ModelFramework.Models
 
         public double Mu
         {
-            get { return Parameters[0]; }
-            set { Parameters[0] = value; }
+            get => Parameters[0];
+            set => Parameters[0] = value;
         }
 
         public double Sigma
         {
-            get { return Parameters[1]; }
-            set { Parameters[1] = value; }
+            get => Parameters[1];
+            set => Parameters[1] = value;
+        }
+
+        public void CarryOutPreMLEComputations()
+        {
+            // nothing to do here: if there are some aspects of likelihood computation that can be reused with different parameters and the same data,
+            // we would do that here
         }
 
         public double Rho(int lag)
@@ -93,35 +99,6 @@ namespace CronoSeries.ABMath.ModelFramework.Models
         {
             Parameters[lag + 2] = value;
         }
-
-        #region IMLEEstimable Members
-
-        public virtual MathNet.Numerics.LinearAlgebra.Vector<double> ParameterToCube(MathNet.Numerics.LinearAlgebra.Vector<double> param)
-        {
-            var cube = MathNet.Numerics.LinearAlgebra.Vector<double>.Build.Dense(param.Count);
-
-            cube[0] = Math.Exp(param[0]/muScale)/(1 + Math.Exp(param[0]*1e-5)); // real to [0,1]
-            cube[1] = param[1]/(1 + param[1]); // real+ to [0,1]
-
-            for (int i = 0; i < maxLag; ++i)
-                cube[i + 2] = (param[i + 2]/2) + 0.5; // [-1,1] to [0,1]
-
-            return cube;
-        }
-
-        public virtual MathNet.Numerics.LinearAlgebra.Vector<double> CubeToParameter(MathNet.Numerics.LinearAlgebra.Vector<double> cube)
-        {
-            var param = MathNet.Numerics.LinearAlgebra.Vector<double>.Build.Dense(2 + maxLag);
-            param[0] = (Math.Log(cube[0]/(1 - cube[0])))*muScale;
-            param[1] = cube[1]/(1 - cube[1]);
-
-            for (int i = 0; i < maxLag; ++i)
-                param[2 + i] = cube[2 + i]*2 - 1.0; // [0,1] to [-1,1]
-
-            return param;
-        }
-
-        #endregion
 
         public override int NumOutputs()
         {
@@ -168,7 +145,7 @@ namespace CronoSeries.ABMath.ModelFramework.Models
                     return "Sigma";
                 default:
                     if (index < 2 + maxLag)
-                        return $"Rho({(index - 1)})";
+                        return $"Rho({index - 1})";
                     throw new ApplicationException("Invalid parameter index.");
             }
         }
@@ -186,19 +163,20 @@ namespace CronoSeries.ABMath.ModelFramework.Models
 
         protected override bool CheckParameterValidity(MathNet.Numerics.LinearAlgebra.Vector<double> param)
         {
-            bool violation = false;
+            var violation = false;
 
             // simple check for now: really we should check to make sure that the specified autocorrelation is non-negative definite
-            for (int i = 0; i < maxLag; ++i)
-                violation |= (Math.Abs(param[2 + i]) >= 1);
+            for (var i = 0; i < maxLag; ++i)
+                violation |= Math.Abs(param[2 + i]) >= 1;
 
             return !violation;
         }
 
-        public override double LogLikelihood(MathNet.Numerics.LinearAlgebra.Vector<double> parameter, double penaltyFactor, bool fillOutputs)
+        public override double LogLikelihood(MathNet.Numerics.LinearAlgebra.Vector<double> parameter,
+            double penaltyFactor, bool fillOutputs)
         {
             MathNet.Numerics.LinearAlgebra.Vector<double> allLLs = null;
-            MathNet.Numerics.LinearAlgebra.Vector<double> pbak = Parameters; // save the current one
+            var pbak = Parameters; // save the current one
 
             if (values == null)
                 return double.NaN;
@@ -215,30 +193,31 @@ namespace CronoSeries.ABMath.ModelFramework.Models
             {
                 double[] rs;
                 double[] forecs;
-                double[] resids = ComputeSpecialResiduals(values, out rs, 1, out forecs);
+                var resids = ComputeSpecialResiduals(values, out rs, 1, out forecs);
 
                 TimeSeries rts;
                 TimeSeries unstdrts;
 
                 if (fillOutputs)
                 {
-                    rts = new TimeSeries { Title = $"{values.Title}[ARMA Res]"};
-                    unstdrts = new TimeSeries { Title = $"{values.Title}[ARMA Res]"};
-                    oneStepPredictors = new TimeSeries { Title = $"{values.Title}[Predic]"};
-                    oneStepPredStd = new TimeSeries { Title = $"{values.Title}[Pred. Stdev.]"};
-                    oneStepPredictorsAtAvailability = new TimeSeries { Title = $"{values.Title}[Predic. AA]"};
+                    rts = new TimeSeries {Title = $"{values.Title}[ARMA Res]"};
+                    unstdrts = new TimeSeries {Title = $"{values.Title}[ARMA Res]"};
+                    oneStepPredictors = new TimeSeries {Title = $"{values.Title}[Predic]"};
+                    oneStepPredStd = new TimeSeries {Title = $"{values.Title}[Pred. Stdev.]"};
+                    oneStepPredictorsAtAvailability = new TimeSeries {Title = $"{values.Title}[Predic. AA]"};
 
-                    for (int t = 0; t < values.Count; ++t)
+                    for (var t = 0; t < values.Count; ++t)
                     {
                         rts.Add(values.TimeStamp(t), resids[t] / Sigma, false);
                         unstdrts.Add(values.TimeStamp(t), resids[t], false);
-                        double stdev = Math.Sqrt(rs[t]);
-                        double fx = values[t] - resids[t] * stdev;
+                        var stdev = Math.Sqrt(rs[t]);
+                        var fx = values[t] - resids[t] * stdev;
                         oneStepPredictors.Add(values.TimeStamp(t), fx, false);
                         oneStepPredStd.Add(values.TimeStamp(t), stdev * Sigma, false);
                         fx = t < values.Count - 1 ? values[t + 1] - resids[t + 1] * Math.Sqrt(rs[t + 1]) : forecs[0];
                         oneStepPredictorsAtAvailability.Add(values.TimeStamp(t), fx, false);
                     }
+
                     Residuals = rts;
                     unstandardizedResiduals = unstdrts;
                 }
@@ -247,38 +226,42 @@ namespace CronoSeries.ABMath.ModelFramework.Models
                 // this is a straightforward implementation of eqn (8.7.4) in Brockwell & Davis,
                 // Time Series: Theory and Methods (2nd edition)
                 allLLs = GetLikelihoodsFromResiduals(resids, rs);
-                for (int t = 0; t < values.Count; ++t)
+                for (var t = 0; t < values.Count; ++t)
                     loglikelihood += allLLs[t];
             }
             else
                 // do nothing for now!
+            {
                 return double.NaN;
+            }
 
             if (fillOutputs)
                 GoodnessOfFit = loglikelihood;
 
             if (parameter != null)
-                Parameters = pbak;  // then restore original
+                Parameters = pbak; // then restore original
 
             var llp = new LogLikelihoodPenalizer(allLLs);
-            return llp.LogLikelihood - llp.Penalty * penaltyFactor;            
+            return llp.LogLikelihood - llp.Penalty * penaltyFactor;
         }
 
-        protected MathNet.Numerics.LinearAlgebra.Vector<double> GetLikelihoodsFromResiduals(double[] res, double[] pvars)
+        protected MathNet.Numerics.LinearAlgebra.Vector<double> GetLikelihoodsFromResiduals(double[] res,
+            double[] pvars)
         {
-            int nobs = res.Length;
-            double alpha = Math.Log(2 * Math.PI * Sigma * Sigma) * 1 / 2.0;
+            var nobs = res.Length;
+            var alpha = Math.Log(2 * Math.PI * Sigma * Sigma) * 1 / 2.0;
             var allLLs = MathNet.Numerics.LinearAlgebra.Vector<double>.Build.Dense(nobs);
-            for (int i = 0; i < nobs; ++i)
+            for (var i = 0; i < nobs; ++i)
                 allLLs[i] = -Math.Log(pvars[i]) / 2 - res[i] * res[i] / (2 * Sigma * Sigma) - alpha;
             return allLLs;
         }
 
 
-        protected override MathNet.Numerics.LinearAlgebra.Vector<double> ComputeConsequentialParameters(MathNet.Numerics.LinearAlgebra.Vector<double> parameter)
+        protected override MathNet.Numerics.LinearAlgebra.Vector<double> ComputeConsequentialParameters(
+            MathNet.Numerics.LinearAlgebra.Vector<double> parameter)
         {
             // fill in mean and sigma
-            MathNet.Numerics.LinearAlgebra.Vector<double> pbak = Parameters;
+            var pbak = Parameters;
             Parameters = parameter;
             MathNet.Numerics.LinearAlgebra.Vector<double> newParms;
 
@@ -308,49 +291,49 @@ namespace CronoSeries.ABMath.ModelFramework.Models
             // successive one-step predictive d-ns.
             // (This works for long-memory processes as well, unlike the obvious constructive approach for ARMA models.)
 
-            int nn = times.Count;
-            MathNet.Numerics.LinearAlgebra.Vector<double> acf = ComputeACF(nn + 1, false);
+            var nn = times.Count;
+            var acf = ComputeACF(nn + 1, false);
             var nu = MathNet.Numerics.LinearAlgebra.Vector<double>.Build.Dense(nn);
             var olda = MathNet.Numerics.LinearAlgebra.Vector<double>.Build.Dense(nn);
             var a = MathNet.Numerics.LinearAlgebra.Vector<double>.Build.Dense(nn);
             var simd = MathNet.Numerics.LinearAlgebra.Vector<double>.Build.Dense(nn);
 
             var rs = new Palf(randomSeed);
-            var sd = new Normal();//new StandardDistribution(rs);
+            var sd = new Normal(); //new StandardDistribution(rs);
             sd.RandomSource = rs;
 
             nu[0] = acf[0]; // nu(0) = 1-step pred. variance of X(0)
-            simd[0] = sd.RandomSource.NextDouble()*Math.Sqrt(nu[0]);
+            simd[0] = sd.RandomSource.NextDouble() * Math.Sqrt(nu[0]);
 
-            for (int t = 1; t < nn; ++t)
+            for (var t = 1; t < nn; ++t)
             {
-                for (int j = 0; j < nn; ++j)
+                for (var j = 0; j < nn; ++j)
                     olda[j] = a[j];
 
                 // compute the new a MathNet.Numerics.LinearAlgebra.Vector
-                double sum = 0.0;
-                for (int j = 1; j < t; ++j)
-                    sum += olda[j - 1]*acf[t - j];
-                a[t - 1] = 1/nu[t - 1]*(acf[t] - sum);
-                for (int j = 0; j < t - 1; ++j)
-                    a[j] = olda[j] - a[t - 1]*olda[t - 2 - j];
+                var sum = 0.0;
+                for (var j = 1; j < t; ++j)
+                    sum += olda[j - 1] * acf[t - j];
+                a[t - 1] = 1 / nu[t - 1] * (acf[t] - sum);
+                for (var j = 0; j < t - 1; ++j)
+                    a[j] = olda[j] - a[t - 1] * olda[t - 2 - j];
 
                 // update nu
-                nu[t] = nu[t - 1]*(1 - a[t - 1]*a[t - 1]);
+                nu[t] = nu[t - 1] * (1 - a[t - 1] * a[t - 1]);
 
                 // compute xhat
                 sum = 0.0;
-                for (int j = 0; j < t; ++j)
-                    sum += a[j]*simd[t - 1 - j];
-                simd[t] = sd.RandomSource.NextDouble()*Math.Sqrt(nu[t]) + sum;
+                for (var j = 0; j < t; ++j)
+                    sum += a[j] * simd[t - 1 - j];
+                simd[t] = sd.RandomSource.NextDouble() * Math.Sqrt(nu[t]) + sum;
             }
 
             var simulated = new TimeSeries
-                                {
-                                    Title = "Simul.",
-                                    Description = $"Simulation from {Description}"
-                                };
-            for (int i = 0; i < nn; ++i)
+            {
+                Title = "Simul.",
+                Description = $"Simulation from {Description}"
+            };
+            for (var i = 0; i < nn; ++i)
                 simulated.Add(times[i], simd[i] + Mu, false);
 
             return simulated;
@@ -371,21 +354,22 @@ namespace CronoSeries.ABMath.ModelFramework.Models
             // assume they are the next discrete time points in a typical ARMA model with
             // times t=1,2,3,...,n.  So all we care about is the number of inputs.
 
-            TimeSeriesBase<DistributionSummary> preds = GetForecasts(startData, futureTimes);
+            var preds = GetForecasts(startData, futureTimes);
 
             return preds;
         }
 
         protected void LocalInitializeParameters()
         {
-            Parameters = MathNet.Numerics.LinearAlgebra.Vector<double>.Build.Dense(2 + maxLag); // all coeffs are initially zero
+            Parameters =
+                MathNet.Numerics.LinearAlgebra.Vector<double>.Build.Dense(2 + maxLag); // all coeffs are initially zero
             Mu = 0;
             Sigma = 1;
 
             ParameterStates = new ParameterState[Parameters.Count];
             ParameterStates[0] = ParameterState.Consequential; // mu follows
             ParameterStates[1] = ParameterState.Consequential; // sigma follows from the others
-            for (int i = 0; i < maxLag; ++i)
+            for (var i = 0; i < maxLag; ++i)
                 ParameterStates[2 + i] = ParameterState.Locked; // locked at 0 by default
         }
 
@@ -395,19 +379,19 @@ namespace CronoSeries.ABMath.ModelFramework.Models
         }
 
 
-        ///<summary>
-        /// This function computes predictive means (one-step, two-step, ...)
-        /// along with the predictive mean-squared error.  It
-        /// assumes that data is regularly spaced in time.
-        ///</summary>
-        ///<param name="startData">existing data that we assume comes from the model</param>
-        ///<param name="futureTimes">times in the future</param>
-        ///<returns></returns>
+        /// <summary>
+        ///     This function computes predictive means (one-step, two-step, ...)
+        ///     along with the predictive mean-squared error.  It
+        ///     assumes that data is regularly spaced in time.
+        /// </summary>
+        /// <param name="startData">existing data that we assume comes from the model</param>
+        /// <param name="futureTimes">times in the future</param>
+        /// <returns></returns>
         private TimeSeriesBase<DistributionSummary> GetForecasts(TimeSeries startData, IList<DateTime> futureTimes)
         {
             // now do forecasting, using the standard Durbin-Levison Algorithm
-            int nobs = startData.Count;
-            int horizon = futureTimes.Count;
+            var nobs = startData.Count;
+            var horizon = futureTimes.Count;
 
             // Numerically stable approach: use innovations algorithm if possible
             double[] nus;
@@ -423,12 +407,12 @@ namespace CronoSeries.ABMath.ModelFramework.Models
             // Use approximation (B&D eqn (5.3.24)) as before to get predictive variances
             var localFmse = MathNet.Numerics.LinearAlgebra.Vector<double>.Build.Dense(horizon);
             localFmse[0] = 1.0;
-            for (int i = 1; i < horizon; ++i)
-                localFmse[i] = localFmse[i - 1] + psis[i]*psis[i];
-            localFmse = localFmse*Sigma*Sigma;
+            for (var i = 1; i < horizon; ++i)
+                localFmse[i] = localFmse[i - 1] + psis[i] * psis[i];
+            localFmse = localFmse * Sigma * Sigma;
 
             var predictors = new TimeSeriesBase<DistributionSummary>();
-            for (int i = 0; i < horizon; ++i)
+            for (var i = 0; i < horizon; ++i)
             {
                 var dn = new DistributionSummary();
                 dn.Mean = forecs[i];
@@ -436,6 +420,7 @@ namespace CronoSeries.ABMath.ModelFramework.Models
                 // dn.FillGaussianQuantiles(0.04);
                 predictors.Add(futureTimes[i], dn, false);
             }
+
             return predictors;
         }
 
@@ -444,8 +429,8 @@ namespace CronoSeries.ABMath.ModelFramework.Models
             var acvf = MathNet.Numerics.LinearAlgebra.Vector<double>.Build.Dense(outToLag + 1);
 
             acvf[0] = Sigma;
-            for (int i = 0; i < outToLag; ++i)
-                acvf[i + 1] = i < maxLag ? Parameters[2 + i]*acvf[0] : 0;
+            for (var i = 0; i < outToLag; ++i)
+                acvf[i + 1] = i < maxLag ? Parameters[2 + i] * acvf[0] : 0;
 
             if (normalize)
                 acvf /= acvf[0];
@@ -457,9 +442,9 @@ namespace CronoSeries.ABMath.ModelFramework.Models
             double tx;
             if (lag <= maxLag)
                 if (lag != 0)
-                    tx = Parameters[2 + lag - 1]*Sigma*Sigma;
+                    tx = Parameters[2 + lag - 1] * Sigma * Sigma;
                 else
-                    tx = Sigma*Sigma;
+                    tx = Sigma * Sigma;
             else
                 tx = 0;
             return tx;
@@ -473,7 +458,7 @@ namespace CronoSeries.ABMath.ModelFramework.Models
         //     based on sigma when this routine was called </param>
         /// <returns>double[] array of residuals = [ (x_i - \hat{x}_i)/\sqrt{rs_i} ]</returns>
         protected double[] ComputeSpecialResiduals(TimeSeries startData, out double[] rs, int forecastHorizon,
-                                                   out double[] forecasts)
+            out double[] forecasts)
         {
             // 1.  residuals are returned: retval[] =  [ (x_i - \hat{x}_i)/\sqrt{rs_{i-1}} ]
             // 2.  rs[...] are one-step predictive MSEs / sigma^2,
@@ -497,12 +482,13 @@ namespace CronoSeries.ABMath.ModelFramework.Models
                 xhat[i] = dl.CurrentPredictor;
                 rs[i] = dl.CurrentMSPE;
             }
+
             for (i = 0; i < rs.Length; ++i)
-                rs[i] /= (Sigma * Sigma);
+                rs[i] /= Sigma * Sigma;
 
             // store the results
             for (n = 0; n < startData.Count; ++n)
-                localResiduals[n] = (startData[n] - xhat[n])/Math.Sqrt(rs[n]);
+                localResiduals[n] = (startData[n] - xhat[n]) / Math.Sqrt(rs[n]);
 
             if (forecastHorizon > 0)
             {
@@ -511,33 +497,59 @@ namespace CronoSeries.ABMath.ModelFramework.Models
                     forecasts[n - startData.Count] = xhat[n];
             }
             else
+            {
                 forecasts = null;
+            }
 
             return localResiduals;
-        }
-
-        public void CarryOutPreMLEComputations()
-        {
-            // nothing to do here: if there are some aspects of likelihood computation that can be reused with different parameters and the same data,
-            // we would do that here
         }
 
         #region Other Mathematical Support Functions
 
         protected static Complex ComplexPower(Complex c, double pow)
         {
-            double r = Math.Sqrt(Math.Pow(c.Magnitude, 2));
-            double theta = c.Phase;
-            Complex retval = new Complex(Math.Pow(r, pow), theta*pow);
+            var r = Math.Sqrt(Math.Pow(c.Magnitude, 2));
+            var theta = c.Phase;
+            var retval = new Complex(Math.Pow(r, pow), theta * pow);
             return retval;
+        }
+
+        #endregion
+
+        #region IMLEEstimable Members
+
+        public virtual MathNet.Numerics.LinearAlgebra.Vector<double> ParameterToCube(
+            MathNet.Numerics.LinearAlgebra.Vector<double> param)
+        {
+            var cube = MathNet.Numerics.LinearAlgebra.Vector<double>.Build.Dense(param.Count);
+
+            cube[0] = Math.Exp(param[0] / muScale) / (1 + Math.Exp(param[0] * 1e-5)); // real to [0,1]
+            cube[1] = param[1] / (1 + param[1]); // real+ to [0,1]
+
+            for (var i = 0; i < maxLag; ++i)
+                cube[i + 2] = param[i + 2] / 2 + 0.5; // [-1,1] to [0,1]
+
+            return cube;
+        }
+
+        public virtual MathNet.Numerics.LinearAlgebra.Vector<double> CubeToParameter(
+            MathNet.Numerics.LinearAlgebra.Vector<double> cube)
+        {
+            var param = MathNet.Numerics.LinearAlgebra.Vector<double>.Build.Dense(2 + maxLag);
+            param[0] = Math.Log(cube[0] / (1 - cube[0])) * muScale;
+            param[1] = cube[1] / (1 - cube[1]);
+
+            for (var i = 0; i < maxLag; ++i)
+                param[2 + i] = cube[2 + i] * 2 - 1.0; // [0,1] to [-1,1]
+
+            return param;
         }
 
         #endregion
 
         #region Real-Time Prediction Stuff
 
-        [NonSerialized]
-        private DurbinLevinsonPredictor realTimePredictor;
+        [NonSerialized] private DurbinLevinsonPredictor realTimePredictor;
 
         public virtual void ResetRealTimePrediction()
         {
@@ -547,7 +559,7 @@ namespace CronoSeries.ABMath.ModelFramework.Models
         // for initializing from a time series
         public virtual void Register(TimeSeries series)
         {
-            for (int t = 0; t < series.Count; ++t)
+            for (var t = 0; t < series.Count; ++t)
                 Register(series.TimeStamp(t), series[t]);
         }
 
@@ -566,7 +578,8 @@ namespace CronoSeries.ABMath.ModelFramework.Models
 
         public virtual DistributionSummary GetCurrentPredictor(DateTime futureTime)
         {
-            var ds = new DistributionSummary {Mean = realTimePredictor.CurrentPredictor, Variance = realTimePredictor.CurrentMSPE};
+            var ds = new DistributionSummary
+                {Mean = realTimePredictor.CurrentPredictor, Variance = realTimePredictor.CurrentMSPE};
             return ds;
         }
 
@@ -594,21 +607,22 @@ namespace CronoSeries.ABMath.ModelFramework.Models
             var approx = new ARMAModel(0, maxLag); // we should be able to get close with an MA
             var hlds = new HaltonSequence(maxLag);
 
-            double bestError = double.MaxValue;
-            var bestMAPolynomial = MathNet.Numerics.LinearAlgebra.Vector<double>.Build.Dense(maxLag);//new Polynomial(maxLag);
+            var bestError = double.MaxValue;
+            var bestMAPolynomial =
+                MathNet.Numerics.LinearAlgebra.Vector<double>.Build.Dense(maxLag); //new Polynomial(maxLag);
 
-            for (int i = 0; i < 200000; ++i )
+            for (var i = 0; i < 200000; ++i)
             {
                 var cube = hlds.GetNext(); // this is the MA part to try in the ARMA
                 var curCube = approx.ParameterToCube(approx.Parameters); // el. 0=mu, el. 1=d, el. 2=sigma
-                for (int j = 0; j < maxLag; ++j)
+                for (var j = 0; j < maxLag; ++j)
                     curCube[j + 3] = cube[j];
                 approx.SetParameters(approx.CubeToParameter(curCube));
 
                 // now compare autocorrelation function (don't care about mean or sigma)
                 var acf = approx.ComputeACF(maxLag, true);
                 double error = 0;
-                for (int j = 0 ; j<maxLag ; ++j)
+                for (var j = 0; j < maxLag; ++j)
                     error += Math.Abs(acf[j + 1] - Rho(j));
                 if (error < bestError)
                 {
@@ -624,7 +638,5 @@ namespace CronoSeries.ABMath.ModelFramework.Models
         }
 
         #endregion
-
-
     }
 }

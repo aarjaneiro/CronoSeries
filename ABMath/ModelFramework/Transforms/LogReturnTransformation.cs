@@ -1,4 +1,5 @@
 ﻿#region License Info
+
 //Component of Cronos Package, http://www.codeplex.com/cronos
 //Copyright (C) 2009 Anthony Brockwell
 
@@ -15,6 +16,7 @@
 //You should have received a copy of the GNU General Public License
 //along with this program; if not, write to the Free Software
 //Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
 #endregion
 
 
@@ -34,22 +36,24 @@ namespace CronoSeries.ABMath.ModelFramework.Transforms
             var inputs = GetInputBundle();
             outputs = new List<TimeSeries>(inputs.Count);
 
-            bool failure = false;
-            for (int i = 0; i < inputs.Count; ++i )
+            var failure = false;
+            for (var i = 0; i < inputs.Count; ++i)
             {
                 var lrs = new TimeSeries();
-                for (int t=1 ; t<inputs[i].Count ; ++t)
+                for (var t = 1; t < inputs[i].Count; ++t)
                 {
-                    double x1 = inputs[i][t - 1];
-                    double x2 = inputs[i][t];
+                    var x1 = inputs[i][t - 1];
+                    var x2 = inputs[i][t];
                     if (x1 > 0 && x2 > 0)
                         lrs.Add(inputs[i].TimeStamp(t), Math.Log(x2) - Math.Log(x1), false);
                     else
                         failure = true;
                 }
+
                 lrs.Title = inputs[i].Title;
                 outputs.Add(lrs);
             }
+
             multivariateOutputPrefix = "LR";
             IsValid = true;
             if (failure)
@@ -96,14 +100,14 @@ namespace CronoSeries.ABMath.ModelFramework.Transforms
         {
             if (socket != 0)
                 throw new SocketException();
-            return new List<Type> { typeof(TimeSeries), typeof(MVTimeSeries) };
+            return new List<Type> {typeof(TimeSeries), typeof(MVTimeSeries)};
         }
 
         public override List<Type> GetOutputTypesFor(int socket)
         {
             if (socket != 0)
                 throw new SocketException();
-            return new List<Type> { typeof(TimeSeries), typeof(MVTimeSeries) };
+            return new List<Type> {typeof(TimeSeries), typeof(MVTimeSeries)};
         }
     }
 }

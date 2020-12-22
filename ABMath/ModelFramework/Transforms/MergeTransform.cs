@@ -8,15 +8,14 @@ namespace CronoSeries.ABMath.ModelFramework.Transforms
     [Serializable]
     public class MergeTransform : TimeSeriesTransformation
     {
-        [NonSerialized]
-        private object outputResult;
-
-        public int NumberOfInputs { get; set; }
+        [NonSerialized] private object outputResult;
 
         public MergeTransform()
         {
             NumberOfInputs = 2;
         }
+
+        public int NumberOfInputs { get; set; }
 
         public override int NumInputs()
         {
@@ -30,7 +29,7 @@ namespace CronoSeries.ABMath.ModelFramework.Transforms
 
         public override string GetInputName(int index)
         {
-            return $"Time Series #{(index + 1)}";
+            return $"Time Series #{index + 1}";
         }
 
         public override string GetOutputName(int index)
@@ -66,12 +65,13 @@ namespace CronoSeries.ABMath.ModelFramework.Transforms
             {
                 // merge univariate TS
                 var result = new TimeSeries();
-                for (int ii = 0 ; ii < NumberOfInputs ; ++ii)
+                for (var ii = 0; ii < NumberOfInputs; ++ii)
                 {
                     var pts = GetInput(ii) as TimeSeries;
                     if (pts != null)
                         result.Add(pts, true);
                 }
+
                 outputResult = result;
                 IsValid = true;
             }
@@ -80,12 +80,13 @@ namespace CronoSeries.ABMath.ModelFramework.Transforms
                 // merge univariate TS
                 var result = new MVTimeSeries(mts.Dimension);
                 result.SubTitle = mts.SubTitle;
-                for (int ii = 0; ii < NumberOfInputs; ++ii)
+                for (var ii = 0; ii < NumberOfInputs; ++ii)
                 {
                     var pts = GetInput(ii) as MVTimeSeries;
                     if (pts != null)
                         result.Add(pts, true);
                 }
+
                 outputResult = result;
                 IsValid = true;
             }
@@ -102,14 +103,14 @@ namespace CronoSeries.ABMath.ModelFramework.Transforms
         {
             if (socket >= NumberOfInputs)
                 throw new SocketException();
-            return new List<Type> { typeof(TimeSeries), typeof(MVTimeSeries) };
+            return new List<Type> {typeof(TimeSeries), typeof(MVTimeSeries)};
         }
 
         public override List<Type> GetOutputTypesFor(int socket)
         {
             if (socket != 0)
                 throw new SocketException();
-            return new List<Type> { typeof(TimeSeries), typeof(MVTimeSeries) };
+            return new List<Type> {typeof(TimeSeries), typeof(MVTimeSeries)};
         }
     }
 }

@@ -59,18 +59,18 @@ namespace CronoSeries.ABMath.ModelFramework.Transforms
             outputs = new List<TimeSeries>();
             foreach (var ts in ins)
             {
-                var ots = new TimeSeries() {Title = ts.Title};
-                for (int t = 0; t < ts.Count; ++t)
-                {
+                var ots = new TimeSeries {Title = ts.Title};
+                for (var t = 0; t < ts.Count; ++t)
                     if (ts[t] > Maximum)
                         ots.Add(ts.TimeStamp(t), Maximum, false);
                     else if (ts[t] < Minimum)
                         ots.Add(ts.TimeStamp(t), Minimum, false);
                     else
                         ots.Add(ts.TimeStamp(t), ts[t], false);
-                }
+
                 outputs.Add(ots);
             }
+
             IsValid = true;
         }
 
@@ -78,14 +78,14 @@ namespace CronoSeries.ABMath.ModelFramework.Transforms
         {
             if (socket != 0)
                 throw new SocketException();
-            return new List<Type> { typeof(TimeSeries), typeof(MVTimeSeries) };
+            return new List<Type> {typeof(TimeSeries), typeof(MVTimeSeries)};
         }
 
         public override List<Type> GetOutputTypesFor(int socket)
         {
             if (socket != 0)
                 throw new SocketException();
-            return new List<Type> { typeof(TimeSeries), typeof(MVTimeSeries) };
+            return new List<Type> {typeof(TimeSeries), typeof(MVTimeSeries)};
         }
     }
 }

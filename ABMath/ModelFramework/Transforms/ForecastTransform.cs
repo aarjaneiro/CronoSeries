@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Net.Sockets;
 using System.Text;
-using CronoSeries.ABMath.Forms;
 using CronoSeries.ABMath.ModelFramework.Data;
 using CronoSeries.ABMath.ModelFramework.Models;
 
@@ -12,14 +11,34 @@ namespace CronoSeries.ABMath.ModelFramework.Transforms
     [Serializable]
     public class ForecastTransform : TimeSeriesTransformation, IExtraFunctionality
     {
-        [Category("Parameter"), Description("Times at which to generate forecasts")]
-        public DateTime[] FutureTimes { get; set; }
-
         public ForecastTransform()
         {
             FutureTimes = new DateTime[10];
-            for (int i=0 ; i<10 ; ++i)
-                FutureTimes[i] = new DateTime(2011, 1, (i + 1)); // default
+            for (var i = 0; i < 10; ++i)
+                FutureTimes[i] = new DateTime(2011, 1, i + 1); // default
+        }
+
+        [Category("Parameter")]
+        [Description("Times at which to generate forecasts")]
+        public DateTime[] FutureTimes { get; set; }
+
+        public int NumAuxiliaryFunctions()
+        {
+            return 1;
+        }
+
+        public string AuxiliaryFunctionName(int index)
+        {
+            if (index == 0)
+                return "Specify Times";
+            return null;
+        }
+
+        public string AuxiliaryFunctionHelp(int index)
+        {
+            if (index == 0)
+                return "Specifies time points in the future at which forecasts will be generated.";
+            return null;
         }
 
         public override int NumInputs()
@@ -76,6 +95,7 @@ namespace CronoSeries.ABMath.ModelFramework.Transforms
                         failMsg.Append("The first input must be a model.");
                     return false;
                 }
+
             if (socket == 1)
                 if (item as TimeSeries == null)
                     return false;
@@ -105,45 +125,26 @@ namespace CronoSeries.ABMath.ModelFramework.Transforms
                 return;
 
             var fdt = new List<DateTime>();
-            foreach (DateTime dt in FutureTimes)
+            foreach (var dt in FutureTimes)
                 fdt.Add(dt);
             var forecasts = tsm.BuildForecasts(tsd, fdt) as TimeSeriesBase<DistributionSummary>;
             if (forecasts == null)
                 return;
 
             var predictiveMeans = new TimeSeries();
-            for (int t = 0; t < forecasts.Count; ++t)
+            for (var t = 0; t < forecasts.Count; ++t)
                 predictiveMeans.Add(forecasts.TimeStamp(t), forecasts[t].Mean, false);
 
             outputs.Add(predictiveMeans);
             IsValid = predictiveMeans.Count > 0;
         }
 
-        public int NumAuxiliaryFunctions()
-        {
-            return 1;
-        }
-
-        public string AuxiliaryFunctionName(int index)
-        {
-            if (index == 0)
-                return "Specify Times";
-            return null;
-        }
-
-        public string AuxiliaryFunctionHelp(int index)
-        {
-            if (index == 0)
-                return "Specifies time points in the future at which forecasts will be generated.";
-            return null;
-        }
-
         public override List<Type> GetAllowedInputTypesFor(int socket)
         {
             if (socket == 0)
-                return new List<Type> { typeof(Model) };
+                return new List<Type> {typeof(Model)};
             if (socket == 1)
-                return new List<Type> { typeof(TimeSeries), typeof(MVTimeSeries) };
+                return new List<Type> {typeof(TimeSeries), typeof(MVTimeSeries)};
             throw new SocketException();
         }
 
@@ -151,7 +152,7 @@ namespace CronoSeries.ABMath.ModelFramework.Transforms
         {
             if (socket >= NumOutputs())
                 throw new SocketException();
-            return new List<Type> { typeof(TimeSeries), typeof(MVTimeSeries) };
+            return new List<Type> {typeof(TimeSeries), typeof(MVTimeSeries)};
         }
     }
 }

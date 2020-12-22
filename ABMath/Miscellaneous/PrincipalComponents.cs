@@ -1,4 +1,5 @@
 ﻿#region License Info
+
 //Component of Cronos Package, http://www.codeplex.com/cronos
 //Copyright (C) 2009 Anthony Brockwell
 
@@ -15,6 +16,7 @@
 //You should have received a copy of the GNU General Public License
 //along with this program; if not, write to the Free Software
 //Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
 #endregion
 
 using System;
@@ -25,18 +27,8 @@ namespace CronoSeries.ABMath.Miscellaneous
 {
     public class PrincipalComponents
     {
-        private Matrix<double> sampleCov;
-        private Evd<double> covDecomposition;
-
-        public Vector<double> SortedEigenvalues
-        {
-            get; protected set;
-        }
-
-        public Matrix<double> SortedComponents
-        {
-            get; protected set;
-        }
+        private readonly Evd<double> covDecomposition;
+        private readonly Matrix<double> sampleCov;
 
         public PrincipalComponents(Matrix<double> covMatrix)
         {
@@ -47,20 +39,25 @@ namespace CronoSeries.ABMath.Miscellaneous
             covDecomposition.Solve(sampleCov);
             var evs = new double[sampleCov.RowCount];
             var indices = new int[sampleCov.RowCount];
-            for (int i = 0; i < sampleCov.RowCount; ++i)
+            for (var i = 0; i < sampleCov.RowCount; ++i)
             {
                 evs[i] = covDecomposition.EigenValues[i].Real;
                 indices[i] = i;
             }
+
             Array.Sort(evs, indices);
 
             var permutation = Matrix<double>.Build.Dense(sampleCov.RowCount, sampleCov.RowCount);
-            for (int i=0 ;i<sampleCov.RowCount ; ++i)
+            for (var i = 0; i < sampleCov.RowCount; ++i)
                 permutation[indices[i], i] = 1.0;
 
-            Matrix<double> v = covDecomposition.EigenVectors;
-            SortedComponents = v*permutation;
+            var v = covDecomposition.EigenVectors;
+            SortedComponents = v * permutation;
             SortedEigenvalues = Vector<double>.Build.DenseOfArray(evs);
         }
+
+        public Vector<double> SortedEigenvalues { get; protected set; }
+
+        public Matrix<double> SortedComponents { get; protected set; }
     }
 }

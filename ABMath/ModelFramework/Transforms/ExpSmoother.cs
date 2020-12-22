@@ -36,8 +36,7 @@ namespace CronoSeries.ABMath.ModelFramework.Transforms
             SmoothFactor = 0.9;
         }
 
-        [Category("Parameter"), Description("Smoothing Factor")]
-        public double SmoothFactor { get; set; }
+        [Category("Parameter")] [Description("Smoothing Factor")] public double SmoothFactor { get; set; }
 
         public override int NumInputs()
         {
@@ -83,13 +82,13 @@ namespace CronoSeries.ABMath.ModelFramework.Transforms
             var retval = new TimeSeries();
 
             // now go through and apply filter
-            for (int t = 0; t < ts.Count; ++t)
+            for (var t = 0; t < ts.Count; ++t)
             {
-                double tx = 0.0;
+                var tx = 0.0;
                 // get MA part
-                tx += (1-SmoothFactor)*ts[t];
+                tx += (1 - SmoothFactor) * ts[t];
                 // get AR part
-                tx += t >= 1 ? SmoothFactor*retval[t - 1] : 0;
+                tx += t >= 1 ? SmoothFactor * retval[t - 1] : 0;
                 retval.Add(ts.TimeStamp(t), tx, false);
             }
 
@@ -100,9 +99,9 @@ namespace CronoSeries.ABMath.ModelFramework.Transforms
         {
             IsValid = false;
 
-            List<TimeSeries> tsList = GetInputBundle();
+            var tsList = GetInputBundle();
             var results = new List<TimeSeries>();
-            foreach (TimeSeries ts in tsList)
+            foreach (var ts in tsList)
                 results.Add(ApplyFilterTo(ts));
 
             outputs = results;
@@ -113,14 +112,14 @@ namespace CronoSeries.ABMath.ModelFramework.Transforms
         {
             if (socket >= NumInputs())
                 throw new SocketException();
-            return new List<Type> { typeof(TimeSeries), typeof(MVTimeSeries) };
+            return new List<Type> {typeof(TimeSeries), typeof(MVTimeSeries)};
         }
 
         public override List<Type> GetOutputTypesFor(int socket)
         {
             if (socket >= NumOutputs())
                 throw new SocketException();
-            return new List<Type> { typeof(TimeSeries), typeof(MVTimeSeries) };
+            return new List<Type> {typeof(TimeSeries), typeof(MVTimeSeries)};
         }
     }
 }

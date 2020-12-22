@@ -1,4 +1,5 @@
 ﻿#region License Info
+
 //Component of Cronos Package, http://www.codeplex.com/cronos
 //Copyright (C) 2009 Anthony Brockwell
 
@@ -15,6 +16,7 @@
 //You should have received a copy of the GNU General Public License
 //along with this program; if not, write to the Free Software
 //Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
 #endregion
 
 using System;
@@ -28,18 +30,23 @@ namespace CronoSeries.ABMath.Miscellaneous
         #region Delegates
 
         public delegate void OptimizationCallback(Vector<double> param, double functionValue,
-                                                  int percentComplete, bool finished);
+            int percentComplete, bool finished);
 
         #endregion
+
+        public delegate double TargetFunction(Vector<double> x);
 
         public OptimizationCallback Callback { get; set; }
         public int StartIteration { get; set; }
 
-        public Vector<double> ArgMin
-        { get; protected set; }
+        public Vector<double> ArgMin { get; protected set; }
 
-        public double Minimum
-        { get; protected set; }
+        public double Minimum { get; protected set; }
+
+        public List<Evaluation> Evaluations { get; protected set; }
+
+        public abstract void Minimize(TargetFunction targetFunction, List<Vector<double>> initialValues,
+            int maxIterations);
 
         public struct Evaluation : IComparable<Evaluation>
         {
@@ -58,13 +65,6 @@ namespace CronoSeries.ABMath.Miscellaneous
             {
                 return value.CompareTo(other.value);
             }
-        } ;
-
-        public List<Evaluation> Evaluations
-        { get; protected set; }
-
-        public delegate double TargetFunction(Vector<double> x);
-
-        public abstract void Minimize(TargetFunction targetFunction, List<Vector<double>> initialValues, int maxIterations);
+        }
     }
 }

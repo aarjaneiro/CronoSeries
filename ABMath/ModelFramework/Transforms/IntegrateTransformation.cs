@@ -1,4 +1,5 @@
 ﻿#region License Info
+
 //Component of Cronos Package, http://www.codeplex.com/cronos
 //Copyright (C) 2009 Anthony Brockwell
 
@@ -15,6 +16,7 @@
 //You should have received a copy of the GNU General Public License
 //along with this program; if not, write to the Free Software
 //Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
 #endregion
 
 
@@ -28,10 +30,9 @@ namespace CronoSeries.ABMath.ModelFramework.Transforms
     [Serializable]
     public class IntegrateTransformation : TimeSeriesTransformation
     {
-        [NonSerialized]
-        private TimeSeries integral;
-        [NonSerialized]
-        private MVTimeSeries mvIntegral;
+        [NonSerialized] private TimeSeries integral;
+
+        [NonSerialized] private MVTimeSeries mvIntegral;
 
         //[Category("Parameter"), Description("Set to true if integral should integrate as step-function (using time-gaps), false if it should just integrate as sum of dirac-delta spikes.")]
         //public double UseTimeIntervals { get; set; }
@@ -88,35 +89,37 @@ namespace CronoSeries.ABMath.ModelFramework.Transforms
                 var mts = GetInput(0) as MVTimeSeries;
                 if (mts == null)
                     return;
-                mvIntegral = new MVTimeSeries(mts.Dimension) { Title = "MV" };
-                for (int i = 0; i < mts.Dimension; ++i)
+                mvIntegral = new MVTimeSeries(mts.Dimension) {Title = "MV"};
+                for (var i = 0; i < mts.Dimension; ++i)
                     mvIntegral.SubTitle[i] = mts.SubTitle[i];
                 integral = null;
                 var sum = new double[mts.Dimension];
-                for (int t = 0; t < mts.Count; ++t)
+                for (var t = 0; t < mts.Count; ++t)
                 {
-                    for (int j = 0; j < mts.Dimension; ++j)
+                    for (var j = 0; j < mts.Dimension; ++j)
                         if (!double.IsNaN(mts[t][j]))
-                           sum[j] += mts[t][j];
+                            sum[j] += mts[t][j];
                     var temp = new double[mts.Dimension];
                     Array.Copy(sum, temp, mts.Dimension);
                     mvIntegral.Add(mts.TimeStamp(t), temp, false);
                 }
             }
+
             if (tp == InputType.UnivariateTS)
             {
                 var ts = GetInput(0) as TimeSeries;
                 if (ts == null)
                     return;
-                integral = new TimeSeries { Title = ts.Title };
+                integral = new TimeSeries {Title = ts.Title};
                 mvIntegral = null;
                 double sum = 0;
-                for (int t = 0; t < ts.Count; ++t)
+                for (var t = 0; t < ts.Count; ++t)
                 {
                     sum += ts[t];
                     integral.Add(ts.TimeStamp(t), sum, false);
                 }
             }
+
             IsValid = true;
         }
 
@@ -124,15 +127,14 @@ namespace CronoSeries.ABMath.ModelFramework.Transforms
         {
             if (socket != 0)
                 throw new SocketException();
-            return new List<Type> { typeof(TimeSeries), typeof(MVTimeSeries) };
+            return new List<Type> {typeof(TimeSeries), typeof(MVTimeSeries)};
         }
 
         public override List<Type> GetOutputTypesFor(int socket)
         {
             if (socket != 0)
                 throw new SocketException();
-            return new List<Type> { typeof(TimeSeries), typeof(MVTimeSeries) };
+            return new List<Type> {typeof(TimeSeries), typeof(MVTimeSeries)};
         }
-
     }
 }

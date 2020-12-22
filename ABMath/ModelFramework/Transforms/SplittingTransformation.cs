@@ -11,7 +11,7 @@ namespace CronoSeries.ABMath.ModelFramework.Transforms
     {
         public override int NumInputs()
         {
-            return 1;  // is a multivariate input
+            return 1; // is a multivariate input
         }
 
         public override int NumOutputs()
@@ -67,15 +67,14 @@ namespace CronoSeries.ABMath.ModelFramework.Transforms
         {
             if (socket != 0)
                 throw new SocketException();
-            return new List<Type> { typeof(MVTimeSeries) };
+            return new List<Type> {typeof(MVTimeSeries)};
         }
 
         public override List<Type> GetOutputTypesFor(int socket)
         {
             if (socket >= NumOutputs())
                 throw new SocketException();
-            return new List<Type> { typeof(TimeSeries) };
+            return new List<Type> {typeof(TimeSeries)};
         }
-
     }
 }

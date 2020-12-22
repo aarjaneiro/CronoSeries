@@ -1,4 +1,5 @@
 ﻿#region License Info
+
 //Component of Cronos Package, http://www.codeplex.com/cronos
 //Copyright (C) 2009 Anthony Brockwell
 
@@ -15,6 +16,7 @@
 //You should have received a copy of the GNU General Public License
 //along with this program; if not, write to the Free Software
 //Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
 #endregion
 
 
@@ -24,27 +26,17 @@ using MathNet.Numerics.LinearAlgebra;
 namespace CronoSeries.ABMath.ModelFramework.Models
 {
     internal class StateSpaceModel
-    {       
-        public Matrix<double> F { get; private set;}    // state transition model
-        public Matrix<double> B { get; private set; }   // control input model
-        public Matrix<double> Q { get; private set; }   // covariance matrix of w
-        public Matrix<double> H { get; private set; }   // observation model        
-        public Matrix<double> R { get; private set; }   // covariance of observation noise 
-
-        public int StateDimension { get; private set; }
-        public int ControlDimension { get; private set; }
-        public int ObservationDimension { get; private set; }
-
-
+    {
         /// <summary>
-        /// Builds a state space model
+        ///     Builds a state space model
         /// </summary>
         /// <param name="F">state transition model</param>
         /// <param name="B">control input model</param>
         /// <param name="Q">covariance matrix of state transition model noise</param>
         /// <param name="H">observation model</param>
         /// <param name="R">covariance matrix of observation noise</param>
-        private StateSpaceModel(Matrix<double> F, Matrix<double> B, Matrix<double> Q, Matrix<double> H, Matrix<double> R)
+        private StateSpaceModel(Matrix<double> F, Matrix<double> B, Matrix<double> Q, Matrix<double> H,
+            Matrix<double> R)
         {
             this.F = F;
             this.R = R;
@@ -76,5 +68,15 @@ namespace CronoSeries.ABMath.ModelFramework.Models
             ControlDimension = B.ColumnCount;
             ObservationDimension = H.ColumnCount;
         }
+
+        public Matrix<double> F { get; } // state transition model
+        public Matrix<double> B { get; } // control input model
+        public Matrix<double> Q { get; } // covariance matrix of w
+        public Matrix<double> H { get; } // observation model        
+        public Matrix<double> R { get; } // covariance of observation noise 
+
+        public int StateDimension { get; }
+        public int ControlDimension { get; }
+        public int ObservationDimension { get; }
     }
 }

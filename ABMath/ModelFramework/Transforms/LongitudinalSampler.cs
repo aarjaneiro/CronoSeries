@@ -43,23 +43,44 @@ namespace CronoSeries.ABMath.ModelFramework.Transforms
             SkipDates = new List<DateTime>();
         }
 
-        [Category("Parameter"), Description("Time to begin sampling")]
-        public DateTime StartTime { get; set; }
+        [Category("Parameter")] [Description("Time to begin sampling")] public DateTime StartTime { get; set; }
 
-        [Category("Parameter"), Description("Time to stop sampling")]
-        public DateTime EndTime { get; set; }
+        [Category("Parameter")] [Description("Time to stop sampling")] public DateTime EndTime { get; set; }
 
-        [Category("Parameter"), Description("List of lags (after each sample point) to get data")]
+        [Category("Parameter")]
+        [Description("List of lags (after each sample point) to get data")]
         public List<TimeSpan> SamplingBaseOffsets { get; set; }
 
-        [Category("Parameter"), Description("Interval for sampling, set to 0 to take all available points")]
+        [Category("Parameter")]
+        [Description("Interval for sampling, set to 0 to take all available points")]
         public TimeSpan SamplingInterval { get; set; }
 
-        [Category("Parameter"), Description("Set to true if sampler should skip weekends")]
+        [Category("Parameter")]
+        [Description("Set to true if sampler should skip weekends")]
         public bool SkipWeekends { get; set; }
 
-        [Category("Parameter"), Description("List of days to be skipped")]
+        [Category("Parameter")]
+        [Description("List of days to be skipped")]
         public List<DateTime> SkipDates { get; set; }
+
+        public int NumAuxiliaryFunctions()
+        {
+            return 2;
+        }
+
+        public string AuxiliaryFunctionName(int index)
+        {
+            if (index == 0)
+                return "ArrayCopy";
+            if (index == 1)
+                return "AutoRange";
+            return null;
+        }
+
+        public string AuxiliaryFunctionHelp(int index)
+        {
+            return null;
+        }
 
         public override string GetDescription()
         {
@@ -92,7 +113,7 @@ namespace CronoSeries.ABMath.ModelFramework.Transforms
         {
             if (SkipDates == null)
                 return false;
-            foreach (DateTime skipDate in SkipDates)
+            foreach (var skipDate in SkipDates)
                 if (dt.Date == skipDate.Date)
                     return true;
             return false;
@@ -103,14 +124,14 @@ namespace CronoSeries.ABMath.ModelFramework.Transforms
             var retval = new List<TimeSeries>();
 
             for (var current = new DateTime(StartTime.Ticks);
-                 current < EndTime;
-                 current = new DateTime((current + SamplingInterval).Ticks))
+                current < EndTime;
+                current = new DateTime((current + SamplingInterval).Ticks))
             {
                 var slice = new TimeSeries();
-                foreach (TimeSpan sampleOffset in SamplingBaseOffsets)
+                foreach (var sampleOffset in SamplingBaseOffsets)
                 {
-                    DateTime adjusted = current + sampleOffset;
-                    bool skipping = false;
+                    var adjusted = current + sampleOffset;
+                    var skipping = false;
                     if (SkipWeekends)
                         if (adjusted.DayOfWeek == DayOfWeek.Saturday || adjusted.DayOfWeek == DayOfWeek.Sunday)
                             skipping = true;
@@ -119,10 +140,11 @@ namespace CronoSeries.ABMath.ModelFramework.Transforms
 
                     if (!skipping)
                     {
-                        double sampled = ofTS.ValueAtTime(adjusted);
+                        var sampled = ofTS.ValueAtTime(adjusted);
                         slice.Add(adjusted, sampled, false);
                     }
                 }
+
                 slice.Title = current.ToString();
                 if (slice.Count > 0)
                     retval.Add(slice);
@@ -169,37 +191,18 @@ namespace CronoSeries.ABMath.ModelFramework.Transforms
             IsValid = true;
         }
 
-        public int NumAuxiliaryFunctions()
-        {
-            return 2;
-        }
-
-        public string AuxiliaryFunctionName(int index)
-        {
-            if (index == 0)
-                return "ArrayCopy";
-            if (index == 1)
-                return "AutoRange";
-            return null;
-        }
-
-        public string AuxiliaryFunctionHelp(int index)
-        {
-            return null;
-        }
-
         public override List<Type> GetAllowedInputTypesFor(int socket)
         {
             if (socket != 0)
                 throw new SocketException();
-            return new List<Type> {typeof (TimeSeries)};
+            return new List<Type> {typeof(TimeSeries)};
         }
 
         public override List<Type> GetOutputTypesFor(int socket)
         {
             if (socket != 0)
                 throw new SocketException();
-            return new List<Type> {typeof (Longitudinal)};
+            return new List<Type> {typeof(Longitudinal)};
         }
     }
 }

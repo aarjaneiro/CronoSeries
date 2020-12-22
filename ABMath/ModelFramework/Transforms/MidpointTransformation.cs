@@ -1,4 +1,5 @@
 ﻿#region License Info
+
 //Component of Cronos Package, http://www.codeplex.com/cronos
 //Copyright (C) 2009 Anthony Brockwell
 
@@ -15,6 +16,7 @@
 //You should have received a copy of the GNU General Public License
 //along with this program; if not, write to the Free Software
 //Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
 #endregion
 
 
@@ -30,21 +32,19 @@ namespace CronoSeries.ABMath.ModelFramework.Transforms
     [Serializable]
     public class MidpointTransformation : TimeSeriesTransformation
     {
-        [NonSerialized]
-        private TimeSeries midPoints;
-
-        [Category("Parameter"), Description("Limit: when bid-ask spread is greater than this, no midpoint is recorded.")]
-        public double SpreadLimit
-        { get; set; }
-        [Category("Parameter"), Description("Name to Assign to Result")]
-        public string AssignedName
-        { get; set; }
+        [NonSerialized] private TimeSeries midPoints;
 
 
         public MidpointTransformation()
         {
             SpreadLimit = 0.04;
         }
+
+        [Category("Parameter")]
+        [Description("Limit: when bid-ask spread is greater than this, no midpoint is recorded.")]
+        public double SpreadLimit { get; set; }
+
+        [Category("Parameter")] [Description("Name to Assign to Result")] public string AssignedName { get; set; }
 
         public override void Recompute()
         {
@@ -55,13 +55,13 @@ namespace CronoSeries.ABMath.ModelFramework.Transforms
             midPoints = null;
             var series = GetInputBundle();
             if (series.Count != 2)
-                return;  // something wrong!
+                return; // something wrong!
 
             // now we should be able to do something
-            int t0 = 0;  // index of next one to check
-            int t1 = 0;
-            int T0 = series[0].Count;
-            int T1 = series[1].Count;
+            var t0 = 0; // index of next one to check
+            var t1 = 0;
+            var T0 = series[0].Count;
+            var T1 = series[1].Count;
 
             midPoints = new TimeSeries();
             if (string.IsNullOrEmpty(AssignedName))
@@ -69,26 +69,27 @@ namespace CronoSeries.ABMath.ModelFramework.Transforms
             else
                 midPoints.Title = AssignedName;
 
-            bool done = false;
+            var done = false;
             while (!done)
             {
-                DateTime dt0 = t0 < T0 ? series[0].TimeStamp(t0) : DateTime.MaxValue;
-                DateTime dt1 = t1 < T1 ? series[1].TimeStamp(t1) : DateTime.MaxValue;
+                var dt0 = t0 < T0 ? series[0].TimeStamp(t0) : DateTime.MaxValue;
+                var dt1 = t1 < T1 ? series[1].TimeStamp(t1) : DateTime.MaxValue;
                 if (dt0 == dt1)
                 {
                     // got one!  only record midpoint if the spread is sufficiently small
-                    double gap = Math.Abs(series[0][t0] - series[1][t1]);
+                    var gap = Math.Abs(series[0][t0] - series[1][t1]);
                     if (gap < SpreadLimit) // less than 4 basis points
                         midPoints.Add(series[0].TimeStamp(t0), (series[0][t0] + series[1][t1]) / 2.0, true);
                     ++t0;
                     ++t1;
                 }
+
                 if (dt0 < dt1)
                     ++t0;
                 if (dt0 > dt1)
                     ++t1;
 
-                done = (t0 == T0) && (t1 == T1);
+                done = t0 == T0 && t1 == T1;
             }
 
             outputs = new List<TimeSeries>(1);
@@ -139,14 +140,14 @@ namespace CronoSeries.ABMath.ModelFramework.Transforms
         {
             if (socket != 0)
                 throw new SocketException();
-            return new List<Type> { typeof(MVTimeSeries) };
+            return new List<Type> {typeof(MVTimeSeries)};
         }
 
         public override List<Type> GetOutputTypesFor(int socket)
         {
             if (socket != 0)
                 throw new SocketException();
-            return new List<Type> { typeof(TimeSeries) };
+            return new List<Type> {typeof(TimeSeries)};
         }
 
         public override bool SetInput(int socket, object item, StringBuilder failMsg)
@@ -158,7 +159,8 @@ namespace CronoSeries.ABMath.ModelFramework.Transforms
             var mts = item as MVTimeSeries;
             if (mts == null || mts.Dimension != 2)
             {
-                failMsg.Append("Input to mid-price transform must be a bivariate series containing bid and ask prices.");
+                failMsg.Append(
+                    "Input to mid-price transform must be a bivariate series containing bid and ask prices.");
                 return false; // failure when tsInput item is not of class TimeSeries or MVTimeSeries
             }
 
@@ -168,6 +170,5 @@ namespace CronoSeries.ABMath.ModelFramework.Transforms
                 Recompute();
             return true;
         }
-
     }
 }

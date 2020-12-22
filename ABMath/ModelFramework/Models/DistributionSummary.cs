@@ -1,4 +1,5 @@
 ﻿#region License Info
+
 //Component of Cronos Package, http://www.codeplex.com/cronos
 //Copyright (C) 2009 Anthony Brockwell
 
@@ -15,6 +16,7 @@
 //You should have received a copy of the GNU General Public License
 //along with this program; if not, write to the Free Software
 //Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
 #endregion
 
 
@@ -25,18 +27,19 @@ namespace CronoSeries.ABMath.ModelFramework.Models
     [Serializable]
     public class DistributionSummary
     {
+        private double sigma;
         public double Mean { get; set; }
 
-        private double sigma;
         public double Variance
         {
-            get { return sigma*sigma; }
-            set { sigma = Math.Sqrt(value); }
+            get => sigma * sigma;
+            set => sigma = Math.Sqrt(value);
         }
+
         public double StdDev
         {
-            get { return sigma; }
-            set { sigma = value; }
+            get => sigma;
+            set => sigma = value;
         }
 
         public double Kurtosis { get; set; }

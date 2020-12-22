@@ -1,4 +1,5 @@
 ﻿#region License Info
+
 //Component of Cronos Package, http://www.codeplex.com/cronos
 //Copyright (C) 2009 Anthony Brockwell
 
@@ -15,6 +16,7 @@
 //You should have received a copy of the GNU General Public License
 //along with this program; if not, write to the Free Software
 //Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
 #endregion
 
 
@@ -29,14 +31,14 @@ namespace CronoSeries.ABMath.ModelFramework.Models
     [Serializable]
     public abstract class MVTimeSeriesModel : TimeSeriesModel
     {
-        [NonSerialized]
-        protected MVTimeSeries mvts;
-
         protected int dimension;
+
+        [NonSerialized] protected MVTimeSeries mvts;
+
         public int Dimension
         {
-            get { return dimension; }
-            protected set { dimension = value; }
+            get => dimension;
+            protected set => dimension = value;
         }
 
         protected override bool CheckDataValidity(object data, StringBuilder failMessage)
@@ -50,9 +52,10 @@ namespace CronoSeries.ABMath.ModelFramework.Models
                 if (mvts.NaNCount() > 0)
                 {
                     if (failMessage != null)
-                       failMessage.AppendLine("Cannot use this model with data with NaNs.");
+                        failMessage.AppendLine("Cannot use this model with data with NaNs.");
                     return false;
                 }
+
             return true;
         }
 
@@ -60,14 +63,14 @@ namespace CronoSeries.ABMath.ModelFramework.Models
         {
             if (socket != 0)
                 throw new SocketException();
-            return new List<Type> { typeof(MVTimeSeries) };
+            return new List<Type> {typeof(MVTimeSeries)};
         }
 
         public override List<Type> GetOutputTypesFor(int socket)
         {
             if (socket < base.NumInputs())
                 return base.GetOutputTypesFor(socket);
-            return new List<Type> { typeof(TimeSeries) }; // all the outputs of a univariate model are other time series
+            return new List<Type> {typeof(TimeSeries)}; // all the outputs of a univariate model are other time series
         }
     }
 }

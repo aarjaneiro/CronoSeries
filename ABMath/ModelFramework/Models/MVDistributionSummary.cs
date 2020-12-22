@@ -5,14 +5,9 @@ namespace CronoSeries.ABMath.ModelFramework.Models
 {
     public class MVDistributionSummary
     {
-        private Matrix<double> sigma;
         public Vector<double> Mean { get; set; }
 
-        public Matrix<double> Variance
-        {
-            get { return sigma; }
-            set { sigma = value; }
-        }
+        public Matrix<double> Variance { get; set; }
 
         public Vector<double> Kurtosis { get; set; }
 

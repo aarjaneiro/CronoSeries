@@ -30,15 +30,15 @@ using MathNet.Numerics.LinearAlgebra;
 namespace CronoSeries.ABMath.ModelFramework.Models
 {
     /// <summary>
-    /// vector autoregressive model, fittable by method of moments only (Yule-Walker eqns)
+    ///     vector autoregressive model, fittable by method of moments only (Yule-Walker eqns)
     /// </summary>
     [Serializable]
     public class VARModel : MVTimeSeriesModel, IMoMEstimable
     {
         protected Vector<double> mu;
 
-        [NonSerialized] private MVTimeSeries oneStepPredictors = null;
-        [NonSerialized] private MVTimeSeries oneStepPredictorsAtAvail = null;
+        [NonSerialized] private MVTimeSeries oneStepPredictors;
+        [NonSerialized] private MVTimeSeries oneStepPredictorsAtAvail;
         protected int order;
         protected Matrix<double>[] Phi;
         protected Matrix<double> Sigma;
@@ -50,10 +50,7 @@ namespace CronoSeries.ABMath.ModelFramework.Models
             LocalInitializeParameters();
         }
 
-        protected int NumParameters
-        {
-            get { return dimension + dimension*dimension*(order + 1); }
-        }
+        protected int NumParameters => dimension + dimension * dimension * (order + 1);
 
         public override string Description
         {
@@ -62,14 +59,14 @@ namespace CronoSeries.ABMath.ModelFramework.Models
                 var sb = new StringBuilder(512);
                 sb.AppendLine("Vector Autoregression:");
                 sb.Append("X(t)");
-                for (int i = 0; i < order; ++i)
-                    sb.AppendFormat("- Phi({0})X(t-{0})", (i + 1));
+                for (var i = 0; i < order; ++i)
+                    sb.AppendFormat("- Phi({0})X(t-{0})", i + 1);
                 sb.Append(" = Z(t)");
                 sb.AppendLine();
                 sb.AppendLine();
                 sb.AppendFormat("Mean = {0}{1}", mu, Environment.NewLine);
-                for (int i = 0; i < order; ++i)
-                    sb.AppendFormat("Phi({0}) = {1:0.0000}{2}", (i + 1), Phi[i], Environment.NewLine);
+                for (var i = 0; i < order; ++i)
+                    sb.AppendFormat("Phi({0}) = {1:0.0000}{2}", i + 1, Phi[i], Environment.NewLine);
                 sb.AppendFormat("Var(Z(t)) = {0:0.0000}{1}", Sigma, Environment.NewLine);
                 return sb.ToString();
             }
@@ -82,17 +79,17 @@ namespace CronoSeries.ABMath.ModelFramework.Models
                 // build vector from matrix parameters
                 var parmVec = Vector<double>.Build.Dense(NumParameters);
 
-                for (int i = 0; i < dimension; ++i)
+                for (var i = 0; i < dimension; ++i)
                     parmVec[i] = mu[i];
 
-                for (int p = 0; p < order; ++p)
-                    for (int i = 0; i < dimension; ++i)
-                        for (int j = 0; j < dimension; ++j)
-                            parmVec[dimension + dimension*dimension*p + j*dimension + i] = Phi[p][i, j];
+                for (var p = 0; p < order; ++p)
+                for (var i = 0; i < dimension; ++i)
+                for (var j = 0; j < dimension; ++j)
+                    parmVec[dimension + dimension * dimension * p + j * dimension + i] = Phi[p][i, j];
 
-                for (int i = 0; i < dimension; ++i)
-                    for (int j = 0; j < dimension; ++j)
-                        parmVec[dimension + dimension*dimension*order + j*dimension + i] = Sigma[i, j];
+                for (var i = 0; i < dimension; ++i)
+                for (var j = 0; j < dimension; ++j)
+                    parmVec[dimension + dimension * dimension * order + j * dimension + i] = Sigma[i, j];
 
                 return parmVec;
             }
@@ -103,31 +100,32 @@ namespace CronoSeries.ABMath.ModelFramework.Models
                 if (value.Count != NumParameters)
                     throw new ArgumentException("Parameter vector is incorrect length.");
 
-                for (int i = 0; i < dimension; ++i)
+                for (var i = 0; i < dimension; ++i)
                     mu[i] = value[i];
 
-                for (int p = 0; p < order; ++p)
-                    for (int i = 0; i < dimension; ++i)
-                        for (int j = 0; j < dimension; ++j)
-                            Phi[p][i, j] = value[dimension + dimension*dimension*p + j*dimension + i];
+                for (var p = 0; p < order; ++p)
+                for (var i = 0; i < dimension; ++i)
+                for (var j = 0; j < dimension; ++j)
+                    Phi[p][i, j] = value[dimension + dimension * dimension * p + j * dimension + i];
 
-                for (int i = 0; i < dimension; ++i)
-                    for (int j = 0; j < dimension; ++j)
-                        Sigma[i, j] = value[dimension + dimension*dimension*order + j*dimension + i];
+                for (var i = 0; i < dimension; ++i)
+                for (var j = 0; j < dimension; ++j)
+                    Sigma[i, j] = value[dimension + dimension * dimension * order + j * dimension + i];
             }
         }
 
         #region IMoMEstimable Members
 
         /// <summary>
-        /// For multivariate autoregressive models, we just solve the Yule-Walker equations to estimate parameters.
-        /// This is conceptually straightforward (see any standard textbook), but requires a lot of linear algebra book-keeping.
+        ///     For multivariate autoregressive models, we just solve the Yule-Walker equations to estimate parameters.
+        ///     This is conceptually straightforward (see any standard textbook), but requires a lot of linear algebra
+        ///     book-keeping.
         /// </summary>
         public void FitByMethodOfMoments()
         {
-            Matrix<double>[] gammas = mvts.ComputeACF(order + 1, false);
+            var gammas = mvts.ComputeACF(order + 1, false);
             var gammasT = new Matrix<double>[gammas.Length];
-            for (int i = 0; i < gammas.Length; ++i)
+            for (var i = 0; i < gammas.Length; ++i)
             {
                 gammasT[i] = gammas[i].Clone();
                 gammasT[i].Transpose();
@@ -135,35 +133,35 @@ namespace CronoSeries.ABMath.ModelFramework.Models
 
             // get sample mean (if parameters are not locked)
             var tempmu = mvts.SampleMean();
-            for (int i = 0; i < Dimension; ++i)
+            for (var i = 0; i < Dimension; ++i)
                 if (ParameterStates[i] == ParameterState.Locked)
                     tempmu[i] = mu[i];
             mu = tempmu;
 
-            Matrix<double> big = gammas[0];
-            Matrix<double> little = gammasT[1];
-            for (int i = 1; i < order; ++i)
+            var big = gammas[0];
+            var little = gammasT[1];
+            for (var i = 1; i < order; ++i)
             {
-                Matrix<double> rightPiece = gammas[1];
-                for (int j = 1; j < i; ++j)
+                var rightPiece = gammas[1];
+                for (var j = 1; j < i; ++j)
                     rightPiece = MatrixExtensionsI.CreateBlockMatrixVertically(gammas[j + 1], rightPiece);
-                Matrix<double> rightPieceT = rightPiece.Clone();
+                var rightPieceT = rightPiece.Clone();
                 rightPieceT.Transpose();
                 big = MatrixExtensionsI.CreateBlockMatrixFrom(big, rightPiece, rightPieceT, gammas[0]);
                 little = MatrixExtensionsI.CreateBlockMatrixVertically(little, gammasT[i + 1]);
             }
 
-            Matrix<double> allPhis = big.Solve(little);
+            var allPhis = big.Solve(little);
 
-            for (int i = 0; i < order; ++i)
+            for (var i = 0; i < order; ++i)
             {
-                Phi[i] = allPhis.SubMatrix(i*dimension, 0, (i + 1)*dimension, dimension);
+                Phi[i] = allPhis.SubMatrix(i * dimension, 0, (i + 1) * dimension, dimension);
                 Phi[i].Transpose();
             }
 
             Sigma = gammas[0];
-            for (int i = 0; i < order; ++i)
-                Sigma -= Phi[i]*gammasT[i + 1];
+            for (var i = 0; i < order; ++i)
+                Sigma -= Phi[i] * gammasT[i + 1];
 
             LogLikelihood(null, 0.0, true);
         }
@@ -177,16 +175,16 @@ namespace CronoSeries.ABMath.ModelFramework.Models
 
         public override string GetParameterName(int index)
         {
-            int n = dimension + dimension*dimension*(order + 1);
+            var n = dimension + dimension * dimension * (order + 1);
             if (index >= n)
                 throw new ArgumentException("Invalid parameter index.");
             if (index < dimension)
-                return $"Mu({(index + 1)})";
+                return $"Mu({index + 1})";
 
-            int p = (index - dimension)/(dimension*dimension);
-            int ofs = (index - dimension)%(dimension*dimension);
-            int i = ofs%dimension;
-            int j = ofs/dimension;
+            var p = (index - dimension) / (dimension * dimension);
+            var ofs = (index - dimension) % (dimension * dimension);
+            var i = ofs % dimension;
+            var j = ofs / dimension;
             if (p < order)
                 return $"Phi[{p}][{i},{j}]";
             return $"Sigma[{p}][{i},{j}]";
@@ -232,36 +230,38 @@ namespace CronoSeries.ABMath.ModelFramework.Models
         }
 
         /// <summary>
-        /// returns one-step predictor of value at time t, given info up to time t-1
+        ///     returns one-step predictor of value at time t, given info up to time t-1
         /// </summary>
         /// <param name="t"></param>
         /// <returns></returns>
         private Vector<double> OneStepPredictor(int t)
         {
             var pred = Matrix<double>.Build.Dense(dimension, 1);
-            Matrix<double> vmu = mu.ToColumnMatrix();
+            var vmu = mu.ToColumnMatrix();
             Matrix<double> tv;
-            for (int i = 1; i <= order; ++i)
+            for (var i = 1; i <= order; ++i)
             {
                 if (t - i >= 0)
                 {
                     tv = Matrix<double>.Build.Dense(mvts[t - i].Length, dimension);
-                    int row = -1;
-                    for (int j = 0; j < mvts[t - i].Length; j++)
+                    var row = -1;
+                    for (var j = 0; j < mvts[t - i].Length; j++)
                     {
-                        if (i % dimension == 0)
-                        {
-                            row++;
-                        }
+                        if (i % dimension == 0) row++;
+
                         tv[row, i] = mvts[t - i][i];
                     }
                 }
-                    
-                        //tv = new Matrix(mvts[t - i], dimension);
+
+                //tv = new Matrix(mvts[t - i], dimension);
                 else
+                {
                     tv = mu.ToColumnMatrix();
-                pred += Phi[i - 1]*(tv - vmu);
+                }
+
+                pred += Phi[i - 1] * (tv - vmu);
             }
+
             return pred.ToVector() + mu;
         }
 
@@ -270,17 +270,17 @@ namespace CronoSeries.ABMath.ModelFramework.Models
             if (mvts == null)
                 return double.NaN;
 
-            Vector<double> paramBak = Parameters;
+            var paramBak = Parameters;
 
             if (parameter != null)
                 Parameters = parameter;
 
             var mvn = new MVNormalDistribution {Mu = mu, Sigma = Sigma};
-            double logLike = 0.0;
-            for (int t = 0; t < mvts.Count; ++t)
+            var logLike = 0.0;
+            for (var t = 0; t < mvts.Count; ++t)
             {
-                Vector<double> pred = OneStepPredictor(t);
-                Vector<double> resid = Vector<double>.Build.DenseOfArray(mvts[t]) - pred;
+                var pred = OneStepPredictor(t);
+                var resid = Vector<double>.Build.DenseOfArray(mvts[t]) - pred;
                 logLike += mvn.LogProbabilityDensity(resid);
             }
 
@@ -288,16 +288,16 @@ namespace CronoSeries.ABMath.ModelFramework.Models
             {
                 GoodnessOfFit = logLike;
 
-                oneStepPredictors = new MVTimeSeries(dimension) { Title = mvts.Title };
-                oneStepPredictorsAtAvail = new MVTimeSeries(dimension) { Title = mvts.Title };
-                var rs = new MVTimeSeries(dimension) { Title = mvts.Title };
+                oneStepPredictors = new MVTimeSeries(dimension) {Title = mvts.Title};
+                oneStepPredictorsAtAvail = new MVTimeSeries(dimension) {Title = mvts.Title};
+                var rs = new MVTimeSeries(dimension) {Title = mvts.Title};
 
                 if (mvts.SubTitle != null)
                 {
                     oneStepPredictors.SubTitle = new string[dimension];
                     oneStepPredictorsAtAvail.SubTitle = new string[dimension];
                     rs.SubTitle = new string[dimension];
-                    for (int i = 0; i < dimension; ++i)
+                    for (var i = 0; i < dimension; ++i)
                         if (mvts.SubTitle[i] != null)
                         {
                             oneStepPredictors.SubTitle[i] = $"{mvts.SubTitle[i]}[Pred]";
@@ -306,23 +306,25 @@ namespace CronoSeries.ABMath.ModelFramework.Models
                         }
                 }
 
-                for (int t = 0; t < mvts.Count; ++t)
+                for (var t = 0; t < mvts.Count; ++t)
                 {
-                    Vector<double> pred = OneStepPredictor(t);
-                    Vector<double> resid = Vector<double>.Build.DenseOfArray(mvts[t]) - pred;
+                    var pred = OneStepPredictor(t);
+                    var resid = Vector<double>.Build.DenseOfArray(mvts[t]) - pred;
 
                     rs.Add(mvts.TimeStamp(t), mvn.Standardize(resid).ToArray(), false);
                     oneStepPredictors.Add(mvts.TimeStamp(t), pred.ToArray(), false);
                     if (t > 0)
                         oneStepPredictorsAtAvail.Add(mvts.TimeStamp(t - 1), pred.ToArray(), false);
                 }
-                oneStepPredictorsAtAvail.Add(mvts.TimeStamp(mvts.Count - 1), OneStepPredictor(mvts.Count).ToArray(), false);
+
+                oneStepPredictorsAtAvail.Add(mvts.TimeStamp(mvts.Count - 1), OneStepPredictor(mvts.Count).ToArray(),
+                    false);
 
                 Residuals = rs;
             }
 
             if (parameter != null)
-               Parameters = paramBak;
+                Parameters = paramBak;
 
             return logLike;
         }
@@ -346,7 +348,7 @@ namespace CronoSeries.ABMath.ModelFramework.Models
         {
             mu = Vector<double>.Build.Dense(dimension);
             Phi = new Matrix<double>[order];
-            for (int i = 0; i < order; ++i)
+            for (var i = 0; i < order; ++i)
                 Phi[i] = Matrix<double>.Build.Dense(dimension, dimension);
             Sigma = Matrix<double>.Build.DenseIdentity(dimension, dimension);
 
@@ -369,7 +371,7 @@ namespace CronoSeries.ABMath.ModelFramework.Models
                 return base.GetOutputTypesFor(socket);
             if (socket >= base.NumOutputs() + 2)
                 throw new SocketException();
-            return new List<Type> { typeof(MVTimeSeries) };
+            return new List<Type> {typeof(MVTimeSeries)};
         }
     }
 }

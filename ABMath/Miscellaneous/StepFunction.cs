@@ -1,4 +1,5 @@
 #region License Info
+
 //Component of Cronos Package, http://www.codeplex.com/cronos
 //Copyright (C) 2009 Anthony Brockwell
 
@@ -15,6 +16,7 @@
 //You should have received a copy of the GNU General Public License
 //along with this program; if not, write to the Free Software
 //Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
 #endregion
 
 using System;
@@ -23,39 +25,33 @@ using System.Collections.Generic;
 namespace CronoSeries.ABMath.Miscellaneous
 {
     /// <summary>
-    /// This class keeps track of a step function mapping R -> R.
-    /// It is assumed that the function only changes (has steps) in a region with compact support.
+    ///     This class keeps track of a step function mapping R -> R.
+    ///     It is assumed that the function only changes (has steps) in a region with compact support.
     /// </summary>
     public class StepFunction
     {
-        public double[] Args { get; protected set; }
-        public double[] Values { get; protected set; }
-
         public StepFunction(double[] args, double[] values)
         {
             Args = args;
             Values = values;
         }
-        
-        public bool IsEmpty
-        {
-            get { return Args.Length == 0; }
-        }
 
-        public int Length
-        {
-            get { return Args.Length; }
-        }
+        public double[] Args { get; protected set; }
+        public double[] Values { get; protected set; }
+
+        public bool IsEmpty => Args.Length == 0;
+
+        public int Length => Args.Length;
 
         /// <summary>
-        /// returns index of last element at or before time t,
-        /// or returns 0 if no element at or before time t
+        ///     returns index of last element at or before time t,
+        ///     or returns 0 if no element at or before time t
         /// </summary>
         /// <param name="t"></param>
         /// <returns></returns>
         private int IndexBefore(double t)
         {
-            int i = Array.BinarySearch(Args, t);
+            var i = Array.BinarySearch(Args, t);
             if (i < 0)
                 i = ~i - 1;
             return i;
@@ -63,7 +59,7 @@ namespace CronoSeries.ABMath.Miscellaneous
 
         public double MonotonicIncreasingInverse(double x)
         {
-            int i = Array.BinarySearch(Values, x);
+            var i = Array.BinarySearch(Values, x);
             if (i >= 0) // it's found!
                 return Args[i];
             // otherwise it must be between points
@@ -72,17 +68,17 @@ namespace CronoSeries.ABMath.Miscellaneous
                 return Args[0];
             if (i == Args.Length)
                 return Args[Args.Length - 1];
-            int i0 = i - 1;
-            int i1 = i;
-            double frac = (x - Values[i0])/(Values[i1] - Values[i0]);
+            var i0 = i - 1;
+            var i1 = i;
+            var frac = (x - Values[i0]) / (Values[i1] - Values[i0]);
             if (x < 0 || x > 1)
                 throw new ApplicationException("Interpolation failure: argument is not between the two found points.");
-            double interpd = frac*Args[i1] + (1 - frac)*Args[i0];
+            var interpd = frac * Args[i1] + (1 - frac) * Args[i0];
             return interpd;
         }
 
         /// <summary>
-        /// returns value at time t (i.e. last change at a time <= t)
+        ///     returns value at time t (i.e. last change at a time <= t)
         /// </summary>
         /// <param name="t"></param>
         /// <returns></returns>
@@ -92,11 +88,11 @@ namespace CronoSeries.ABMath.Miscellaneous
                 throw new ApplicationException("Invalid evaluation in StepFunction.");
 
             if (t < Args[0])
-                return Values[0];  // extend first value to the left
+                return Values[0]; // extend first value to the left
 
             // otherwise we just find the greatest timestamp still less than or equal to t
             // using a simple binary search
-            int i0 = IndexBefore(t);
+            var i0 = IndexBefore(t);
             if (i0 == -1)
                 i0 = 0;
 
@@ -106,17 +102,17 @@ namespace CronoSeries.ABMath.Miscellaneous
 
         public double InterpolatedValue(double t)
         {
-            int i0 = IndexBefore(t);
+            var i0 = IndexBefore(t);
             if (i0 == -1)
                 return Values[0];
             if (Length < 2)
                 return Values[0];
             if (i0 == Length - 1)
                 return Values[Length - 1];
-            double t0 = Args[i0];
-            double t1 = Args[i0 + 1];
-            double frac = (t - t0)/(t1 - t0);
-            double retval = Values[i0] * (1 - frac) + Values[i0+1] * frac;
+            var t0 = Args[i0];
+            var t1 = Args[i0 + 1];
+            var frac = (t - t0) / (t1 - t0);
+            var retval = Values[i0] * (1 - frac) + Values[i0 + 1] * frac;
             return retval;
         }
 
@@ -125,27 +121,27 @@ namespace CronoSeries.ABMath.Miscellaneous
             var newargs = new double[x.Args.Length];
             Array.Copy(x.Args, newargs, x.Args.Length);
             var newvals = new double[x.Args.Length];
-            for (int t=0 ; t<x.Args.Length ; ++t)
-                newvals[t] = x.Values[t]*multiplier;
+            for (var t = 0; t < x.Args.Length; ++t)
+                newvals[t] = x.Values[t] * multiplier;
             return new StepFunction(newargs, newvals);
         }
 
-        public static StepFunction operator+(StepFunction x, StepFunction y)
+        public static StepFunction operator +(StepFunction x, StepFunction y)
         {
             // combine two step functions
             var newargs = new List<double>(x.Args.Length + y.Args.Length);
             var newvals = new List<double>(x.Args.Length + y.Args.Length);
 
-            int i0 = 0;
-            int i1 = 0;
+            var i0 = 0;
+            var i1 = 0;
 
-            bool done = (i0 == x.Args.Length && i1 == y.Args.Length);
+            var done = i0 == x.Args.Length && i1 == y.Args.Length;
             while (!done)
             {
-                double t0 = i0 < x.Args.Length ? x.Args[i0] : double.MaxValue;
-                double t1 = i1 < y.Args.Length ? y.Args[i1] : double.MaxValue;
+                var t0 = i0 < x.Args.Length ? x.Args[i0] : double.MaxValue;
+                var t1 = i1 < y.Args.Length ? y.Args[i1] : double.MaxValue;
                 double newval;
-                
+
                 if (t0 == t1)
                 {
                     // combine them
@@ -174,10 +170,11 @@ namespace CronoSeries.ABMath.Miscellaneous
                     }
                 }
 
-                done = (i0 == x.Args.Length && i1 == y.Args.Length);
+                done = i0 == x.Args.Length && i1 == y.Args.Length;
             }
-            double[] allargs = newargs.ToArray();
-            double[] allvals = newvals.ToArray();
+
+            var allargs = newargs.ToArray();
+            var allvals = newvals.ToArray();
             return new StepFunction(allargs, allvals);
         }
     }

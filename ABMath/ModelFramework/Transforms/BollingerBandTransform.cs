@@ -1,4 +1,5 @@
 ﻿#region License Info
+
 //Component of Cronos Package, http://www.codeplex.com/cronos
 //Copyright (C) 2009 Anthony Brockwell
 
@@ -15,6 +16,7 @@
 //You should have received a copy of the GNU General Public License
 //along with this program; if not, write to the Free Software
 //Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
 #endregion
 
 using System;
@@ -30,9 +32,18 @@ namespace CronoSeries.ABMath.ModelFramework.Transforms
     [Serializable]
     public class BollingerBandTransform : TimeSeriesTransformation
     {
-        [Category("Parameter"), Description("Number of periods to use for rolling mean/std.dev.")]
+        public BollingerBandTransform()
+        {
+            NumPeriods = 20;
+            Width = 1.96;
+        }
+
+        [Category("Parameter")]
+        [Description("Number of periods to use for rolling mean/std.dev.")]
         public int NumPeriods { get; set; }
-        [Category("Parameter"), Description("# of standard deviations from mean at which to put bands.")]
+
+        [Category("Parameter")]
+        [Description("# of standard deviations from mean at which to put bands.")]
         public double Width { get; set; }
 
         public override int NumInputs()
@@ -43,12 +54,6 @@ namespace CronoSeries.ABMath.ModelFramework.Transforms
         public override int NumOutputs()
         {
             return 2;
-        }
-
-        public BollingerBandTransform()
-        {
-            NumPeriods = 20;
-            Width = 1.96;
         }
 
         public override string GetInputName(int index)
@@ -74,6 +79,7 @@ namespace CronoSeries.ABMath.ModelFramework.Transforms
                 bundle.Title = "Bollinger";
                 return bundle;
             }
+
             if (socket == 1)
                 return outputs[3];
             throw new SocketException();
@@ -109,21 +115,21 @@ namespace CronoSeries.ABMath.ModelFramework.Transforms
             var upper = new TimeSeries();
             var indicators = new TimeSeries();
 
-            var acc = new List<double>();//new Accumulator();
-            for (int t=0 ; t<input.Count ; ++t)
+            var acc = new List<double>(); //new Accumulator();
+            for (var t = 0; t < input.Count; ++t)
             {
                 acc.Add(input[t]);
                 if (acc.Count > NumPeriods)
                 {
-                    Vector<double> v = Vector<double>.Build.DenseOfArray(acc.ToArray());
-                    double sigma = Statistics.PopulationStandardDeviation(v);
-                    double mean = Statistics.Mean(v);
+                    var v = Vector<double>.Build.DenseOfArray(acc.ToArray());
+                    var sigma = v.PopulationStandardDeviation();
+                    var mean = v.Mean();
                     acc.Remove(input[t - NumPeriods]);
                     values.Add(input.TimeStamp(t), input[t], false);
                     lower.Add(input.TimeStamp(t), mean - Width * sigma, false);
                     upper.Add(input.TimeStamp(t), mean + Width * sigma, false);
-                    double sig = sigma;
-                    indicators.Add(input.TimeStamp(t), sig != 0 ? (input[t] - mean)/sig : 0, false);
+                    var sig = sigma;
+                    indicators.Add(input.TimeStamp(t), sig != 0 ? (input[t] - mean) / sig : 0, false);
                 }
             }
 
@@ -141,15 +147,15 @@ namespace CronoSeries.ABMath.ModelFramework.Transforms
         {
             if (socket >= NumInputs())
                 throw new SocketException();
-            return new List<Type> { typeof(TimeSeries) };
+            return new List<Type> {typeof(TimeSeries)};
         }
 
         public override List<Type> GetOutputTypesFor(int socket)
         {
             if (socket == 0)
-                return new List<Type> { typeof(MVTimeSeries) };
+                return new List<Type> {typeof(MVTimeSeries)};
             if (socket == 1)
-                return new List<Type> { typeof(TimeSeries) };
+                return new List<Type> {typeof(TimeSeries)};
             throw new SocketException();
         }
     }

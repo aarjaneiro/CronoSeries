@@ -1,4 +1,5 @@
 #region License Info
+
 //Component of Cronos Package, http://www.codeplex.com/cronos
 //Copyright (C) 2009 Anthony Brockwell
 
@@ -15,6 +16,7 @@
 //You should have received a copy of the GNU General Public License
 //along with this program; if not, write to the Free Software
 //Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
 #endregion
 
 using System.Data;
@@ -22,16 +24,20 @@ using System.Data;
 namespace CronoSeries.ABMath.Miscellaneous
 {
     /// <summary>
-    /// This class generates a one-dimensional low-discrepancy sequence.
-    /// See discussion at http://en.wikipedia.org/wiki/Constructions_of_low-discrepancy_sequences
+    ///     This class generates a one-dimensional low-discrepancy sequence.
+    ///     See discussion at http://en.wikipedia.org/wiki/Constructions_of_low-discrepancy_sequences
     /// </summary>
     public class VanderCorputSequence
     {
-        private long _base;
-        private int[] _representation;     // Here we have _currentn in base _base representation, backwards (0,base,base^2,...)
-        private int _lastnonzerodigit;     // Here we have the index of the last non-zero digit in the representation (-1 to start)
         private const int _maxdigits = 200;
+        private readonly long _base;
         private long _currentn;
+
+        private int
+            _lastnonzerodigit; // Here we have the index of the last non-zero digit in the representation (-1 to start)
+
+        private readonly int[]
+            _representation; // Here we have _currentn in base _base representation, backwards (0,base,base^2,...)
 
         public VanderCorputSequence(long numbase)
         {
@@ -43,7 +49,7 @@ namespace CronoSeries.ABMath.Miscellaneous
         private void Reset()
         {
             _currentn = 0;
-            for (int i = 0; i < _maxdigits; ++i)
+            for (var i = 0; i < _maxdigits; ++i)
                 _representation[i] = 0;
             _lastnonzerodigit = -1;
         }
@@ -60,7 +66,7 @@ namespace CronoSeries.ABMath.Miscellaneous
             if (curindex > _lastnonzerodigit)
                 _lastnonzerodigit = curindex;
 
-            while (_representation[curindex]==_base)
+            while (_representation[curindex] == _base)
             {
                 _representation[curindex] = 0;
                 ++curindex;
@@ -74,10 +80,10 @@ namespace CronoSeries.ABMath.Miscellaneous
 
             // Then compute the van der Corput number
 
-            double curpower = 1.0/_base, retval = 0.0;
+            double curpower = 1.0 / _base, retval = 0.0;
             for (i = 0; i <= _lastnonzerodigit; ++i)
             {
-                retval += _representation[i]*curpower;
+                retval += _representation[i] * curpower;
                 curpower /= _base;
             }
 

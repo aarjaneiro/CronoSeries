@@ -1,4 +1,5 @@
 ﻿#region License Info
+
 //Component of Cronos Package, http://www.codeplex.com/cronos
 //Copyright (C) 2009 Anthony Brockwell
 
@@ -15,6 +16,7 @@
 //You should have received a copy of the GNU General Public License
 //along with this program; if not, write to the Free Software
 //Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
 #endregion
 
 
@@ -28,14 +30,14 @@ using MathNet.Numerics.LinearAlgebra;
 namespace CronoSeries.ABMath.ModelFramework.Models
 {
     /// <summary>
-    /// This class represents a model for a univariate time series or for
-    /// longitudinal data (a list of separate univariate time series)
+    ///     This class represents a model for a univariate time series or for
+    ///     longitudinal data (a list of separate univariate time series)
     /// </summary>
     [Serializable]
     public abstract class UnivariateTimeSeriesModel : TimeSeriesModel
     {
-        protected TimeSeries values;
         protected Longitudinal longitudinalValues;
+        protected TimeSeries values;
 
         protected bool DataIsLongitudinal()
         {
@@ -52,6 +54,7 @@ namespace CronoSeries.ABMath.ModelFramework.Models
                     failMessage.AppendLine("Cannot cast input into a (univariate) TimeSeries or Longitudinal object.");
                 return false;
             }
+
             return true;
         }
 
@@ -70,14 +73,14 @@ namespace CronoSeries.ABMath.ModelFramework.Models
         {
             if (socket != 0)
                 throw new SocketException();
-            return new List<Type> {typeof (TimeSeries)};
+            return new List<Type> {typeof(TimeSeries)};
         }
 
         public override List<Type> GetOutputTypesFor(int socket)
         {
             if (socket < base.NumInputs())
                 return base.GetOutputTypesFor(socket);
-            return new List<Type> {typeof (TimeSeries)}; // all the outputs of a univariate model are other time series
+            return new List<Type> {typeof(TimeSeries)}; // all the outputs of a univariate model are other time series
         }
     }
 }

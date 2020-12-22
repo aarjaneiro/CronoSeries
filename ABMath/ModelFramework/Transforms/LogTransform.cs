@@ -1,4 +1,5 @@
 ﻿#region License Info
+
 //Component of Cronos Package, http://www.codeplex.com/cronos
 //Copyright (C) 2009 Anthony Brockwell
 
@@ -15,6 +16,7 @@
 //You should have received a copy of the GNU General Public License
 //along with this program; if not, write to the Free Software
 //Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
 #endregion
 
 
@@ -34,12 +36,12 @@ namespace CronoSeries.ABMath.ModelFramework.Transforms
 
             var logged = new List<TimeSeries>(toLog.Count);
 
-            bool failed = false;
+            var failed = false;
             foreach (var inp in toLog)
             {
                 var ts = new TimeSeries();
                 ts.Title = $"Log({inp.Title})";
-                for (int t = 0; t < inp.Count; ++t)
+                for (var t = 0; t < inp.Count; ++t)
                     if (inp[t] > 0)
                         ts.Add(inp.TimeStamp(t), Math.Log(inp[t]), false);
                     else
@@ -94,14 +96,14 @@ namespace CronoSeries.ABMath.ModelFramework.Transforms
         {
             if (socket != 0)
                 throw new SocketException();
-            return new List<Type> { typeof(TimeSeries), typeof(MVTimeSeries) };
+            return new List<Type> {typeof(TimeSeries), typeof(MVTimeSeries)};
         }
 
         public override List<Type> GetOutputTypesFor(int socket)
         {
             if (socket != 0)
                 throw new SocketException();
-            return new List<Type> { typeof(TimeSeries), typeof(MVTimeSeries) };
+            return new List<Type> {typeof(TimeSeries), typeof(MVTimeSeries)};
         }
     }
 }

@@ -1,4 +1,5 @@
 ﻿#region License Info
+
 //Component of Cronos Package, http://www.codeplex.com/cronos
 //Copyright (C) 2009 Anthony Brockwell
 
@@ -15,6 +16,7 @@
 //You should have received a copy of the GNU General Public License
 //along with this program; if not, write to the Free Software
 //Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
 #endregion
 
 using System;
@@ -28,20 +30,26 @@ namespace CronoSeries.ABMath.ModelFramework.Transforms
     [Serializable]
     public class LinearCombinationTransform : TimeSeriesTransformation
     {
-        [NonSerialized]
-        protected TimeSeries combination;
-
-        [Category("Parameter"), Description("If true, uses timestamps of first input, other inputs are regarded as step functions and overrides RequiresExactTimeMatch parameter")]
-        public bool UseTimesFromFirst { get; set; }
-        [Category("Parameter"), Description("If true, only includes points where all inputs have values, if false, regards all inputs as step functions")]
-        public bool RequiresExactTimeMatch { get; set; }
-        [Category("Parameter"), Description("Coefficients in linear combination, increase the array size to allow for more than two inputs")]
-        public double[] Coefficients { get; set; }
+        [NonSerialized] protected TimeSeries combination;
 
         public LinearCombinationTransform()
         {
             Coefficients = new[] {1.0, -1.0};
         }
+
+        [Category("Parameter")]
+        [Description(
+            "If true, uses timestamps of first input, other inputs are regarded as step functions and overrides RequiresExactTimeMatch parameter")]
+        public bool UseTimesFromFirst { get; set; }
+
+        [Category("Parameter")]
+        [Description(
+            "If true, only includes points where all inputs have values, if false, regards all inputs as step functions")]
+        public bool RequiresExactTimeMatch { get; set; }
+
+        [Category("Parameter")]
+        [Description("Coefficients in linear combination, increase the array size to allow for more than two inputs")]
+        public double[] Coefficients { get; set; }
 
         public override void Recompute()
         {
@@ -52,55 +60,55 @@ namespace CronoSeries.ABMath.ModelFramework.Transforms
 
             // hacky fix to use old saved files
             if (Coefficients == null)
-                Coefficients = new[] { 1.0, -1.0 };
+                Coefficients = new[] {1.0, -1.0};
 
-            int n = Coefficients.Length;
+            var n = Coefficients.Length;
 
             combination = null;
 
             var series = GetInputBundle();
             if (series.Count != Coefficients.Length)
                 return;
-                
-            // now we should be able to do something
-            int[] ts = new int[n];  // index of next one in each ts to check
-            int[] Ts = new int[n];  // counts
 
-            for (int i=0 ; i<n ; ++i)
+            // now we should be able to do something
+            var ts = new int[n]; // index of next one in each ts to check
+            var Ts = new int[n]; // counts
+
+            for (var i = 0; i < n; ++i)
                 Ts[i] = series[i].Count;
 
             combination = new TimeSeries();
             if (n == 2)
-            combination.Title = string.Format("{0:0.0}x{1} {2} {3:0.0}x{4}",
-                                              Coefficients[0], series[0].Title,
-                                              Coefficients[1] >= 0 ? '+' : '-',
-                                              Math.Abs(Coefficients[1]), series[1].Title);
+                combination.Title = string.Format("{0:0.0}x{1} {2} {3:0.0}x{4}",
+                    Coefficients[0], series[0].Title,
+                    Coefficients[1] >= 0 ? '+' : '-',
+                    Math.Abs(Coefficients[1]), series[1].Title);
             else
-               combination.Title = "Linear Comb.";
+                combination.Title = "Linear Comb.";
 
 
             if (UseTimesFromFirst)
             {
-                for (int t = 0 ; t<series[0].Count ; ++t)
+                for (var t = 0; t < series[0].Count; ++t)
                 {
-                    double sum = series[0][t]*Coefficients[0];
+                    var sum = series[0][t] * Coefficients[0];
                     var tstamp = series[0].TimeStamp(t);
-                    for (int i = 1; i < n; ++i)
-                        sum += series[i].ValueAtTime(tstamp)*Coefficients[i];
+                    for (var i = 1; i < n; ++i)
+                        sum += series[i].ValueAtTime(tstamp) * Coefficients[i];
                     combination.Add(tstamp, sum, true);
                 }
             }
             else // it's either require exact time matching or else use step functions
             {
-                bool done = false;
+                var done = false;
                 while (!done)
                 {
                     var dts = new DateTime[n];
 
-                    bool allDatesSame = true;
-                    int argmin = 0;
+                    var allDatesSame = true;
+                    var argmin = 0;
                     var minval = DateTime.MaxValue;
-                    for (int i = 0; i < n; ++i)
+                    for (var i = 0; i < n; ++i)
                     {
                         dts[i] = ts[i] < Ts[i] ? series[i].TimeStamp(ts[i]) : DateTime.MaxValue;
                         if (dts[i] < minval)
@@ -108,47 +116,53 @@ namespace CronoSeries.ABMath.ModelFramework.Transforms
                             argmin = i;
                             minval = dts[i];
                         }
+
                         if (i > 0)
                             allDatesSame &= dts[i] == dts[i - 1];
                     }
 
                     if (allDatesSame)
                     {
-                        double sum = 0.0;
+                        var sum = 0.0;
                         // got one!
-                        for (int i = 0; i < n; ++i)
-                            sum += series[i][ts[i]]*Coefficients[i];
+                        for (var i = 0; i < n; ++i)
+                            sum += series[i][ts[i]] * Coefficients[i];
                         combination.Add(series[0].TimeStamp(ts[0]), sum, false);
-                        for (int i = 0; i < n; ++i)
+                        for (var i = 0; i < n; ++i)
                             ++ts[i];
                     }
                     else if (!RequiresExactTimeMatch)
                     {
                         // evaluate at the minimum and advance
-                        double sum = 0.0;
-                        bool valid = true;
-                        for (int i = 0; i < n; ++i)
+                        var sum = 0.0;
+                        var valid = true;
+                        for (var i = 0; i < n; ++i)
                             if (ts[i] < Ts[i] && series[i].TimeStamp(ts[i]) <= minval)
-                                sum += Coefficients[i]*series[i][ts[i]];
+                            {
+                                sum += Coefficients[i] * series[i][ts[i]];
+                            }
                             else
                             {
                                 if (ts[i] > 0)
-                                    sum += Coefficients[i]*series[i][ts[i] - 1];
+                                    sum += Coefficients[i] * series[i][ts[i] - 1];
                                 else
                                     valid = false;
                             }
+
                         if (valid)
                             combination.Add(minval, sum, false);
-                        for (int i = 0; i < n; ++i)
+                        for (var i = 0; i < n; ++i)
                             if (ts[i] < Ts[i])
                                 if (series[i].TimeStamp(ts[i]) <= minval)
                                     ++ts[i];
                     }
                     else if (ts[argmin] < Ts[argmin])
+                    {
                         ++ts[argmin];
+                    }
 
                     done = true;
-                    for (int i = 0; i < n; ++i)
+                    for (var i = 0; i < n; ++i)
                         done &= ts[i] == Ts[i];
                 }
             }
@@ -177,7 +191,7 @@ namespace CronoSeries.ABMath.ModelFramework.Transforms
         public override int NumInputs()
         {
             if (Coefficients == null)
-                Coefficients = new[] { 1.0, -1.0 };
+                Coefficients = new[] {1.0, -1.0};
             return Coefficients.Length;
         }
 
@@ -210,15 +224,14 @@ namespace CronoSeries.ABMath.ModelFramework.Transforms
         {
             if (socket >= NumInputs())
                 throw new SocketException();
-            return new List<Type> { typeof(TimeSeries) };
+            return new List<Type> {typeof(TimeSeries)};
         }
 
         public override List<Type> GetOutputTypesFor(int socket)
         {
             if (socket != 0)
                 throw new SocketException();
-            return new List<Type> { typeof(TimeSeries) };
+            return new List<Type> {typeof(TimeSeries)};
         }
-
     }
 }

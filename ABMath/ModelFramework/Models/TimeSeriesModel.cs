@@ -1,4 +1,5 @@
 ﻿#region License Info
+
 //Component of Cronos Package, http://www.codeplex.com/cronos
 //Copyright (C) 2009 Anthony Brockwell
 
@@ -15,6 +16,7 @@
 //You should have received a copy of the GNU General Public License
 //along with this program; if not, write to the Free Software
 //Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
 #endregion
 
 using System;
@@ -55,9 +57,10 @@ namespace CronoSeries.ABMath.ModelFramework.Models
             {
                 TheData = item;
                 OnDataConnection();
-                LogLikelihood(null, 0.0, true);  // forces residuals and all outputs to be filled in
+                LogLikelihood(null, 0.0, true); // forces residuals and all outputs to be filled in
                 return true;
             }
+
             return false;
         }
 
@@ -88,15 +91,15 @@ namespace CronoSeries.ABMath.ModelFramework.Models
         {
             if (socket != 0)
                 throw new SocketException();
-            return new List<Type> { typeof(TimeSeries), typeof(MVTimeSeries), typeof(Longitudinal) };
+            return new List<Type> {typeof(TimeSeries), typeof(MVTimeSeries), typeof(Longitudinal)};
         }
 
         public override List<Type> GetOutputTypesFor(int socket)
         {
             if (socket == 0)
-                return new List<Type> { typeof(Model) };
+                return new List<Type> {typeof(Model)};
             if (socket == 1)
-                return new List<Type> { typeof(TimeSeries), typeof(MVTimeSeries) };
+                return new List<Type> {typeof(TimeSeries), typeof(MVTimeSeries)};
             throw new SocketException();
         }
     }

@@ -1,4 +1,5 @@
 ﻿#region License Info
+
 //Component of Cronos Package, http://www.codeplex.com/cronos
 //Copyright (C) 2009 Anthony Brockwell
 
@@ -15,6 +16,7 @@
 //You should have received a copy of the GNU General Public License
 //along with this program; if not, write to the Free Software
 //Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
 #endregion
 
 using System;
@@ -26,17 +28,16 @@ using CronoSeries.ABMath.ModelFramework.Data;
 namespace CronoSeries.ABMath.ModelFramework.Transforms
 {
     /// <summary>
-    /// This differencing transformation can operate on univariate, multivariate or longitudinal data.
+    ///     This differencing transformation can operate on univariate, multivariate or longitudinal data.
     /// </summary>
     [Serializable]
     public class DifferenceTransformation : TimeSeriesTransformation
     {
-        [NonSerialized]
-        private TimeSeries differences;
-        [NonSerialized]
-        private MVTimeSeries mvDifferences;
-        [NonSerialized] 
-        private Longitudinal longDifferences;
+        [NonSerialized] private TimeSeries differences;
+
+        [NonSerialized] private Longitudinal longDifferences;
+
+        [NonSerialized] private MVTimeSeries mvDifferences;
 
         public DifferenceTransformation()
         {
@@ -45,16 +46,20 @@ namespace CronoSeries.ABMath.ModelFramework.Transforms
             Phase = 0;
         }
 
-        [Category("Parameter"), Description("Lag at which to difference")]
-        public int Lag { get; set; }
-        [Category("Parameter"), Description("Time stamp mode: if true, the time stamp is at the beginning of the interval, if false, it's at the end.")]
+        [Category("Parameter")] [Description("Lag at which to difference")] public int Lag { get; set; }
+
+        [Category("Parameter")]
+        [Description(
+            "Time stamp mode: if true, the time stamp is at the beginning of the interval, if false, it's at the end.")]
         public bool LeftTimeStamps { get; set; }
-        [Category("Parameter"), Description("Padding: set to true to pad output with zeros")]
+
+        [Category("Parameter")]
+        [Description("Padding: set to true to pad output with zeros")]
         public bool PadWithZeroes { get; set; }
-        [Category("Parameter"), Description("Spacing at which to sample input")]
-        public int Spacing { get; set; }
-        [Category("Parameter"), Description("Offset used if spacing is greater than 1")]
-        public int Phase { get; set; }
+
+        [Category("Parameter")] [Description("Spacing at which to sample input")] public int Spacing { get; set; }
+
+        [Category("Parameter")] [Description("Offset used if spacing is greater than 1")] public int Phase { get; set; }
 
 
         public override string GetDescription()
@@ -64,8 +69,8 @@ namespace CronoSeries.ABMath.ModelFramework.Transforms
 
         public override string GetShortDescription()
         {
-            if (Lag==1)
-               return "Diff";
+            if (Lag == 1)
+                return "Diff";
             return $"Diff_{Lag}";
         }
 
@@ -88,9 +93,9 @@ namespace CronoSeries.ABMath.ModelFramework.Transforms
         public override object GetOutput(int socket)
         {
             if (differences != null)
-               return differences;
+                return differences;
             if (mvDifferences != null)
-               return mvDifferences;
+                return mvDifferences;
             return longDifferences;
         }
 
@@ -108,14 +113,14 @@ namespace CronoSeries.ABMath.ModelFramework.Transforms
         {
             if (socket != 0)
                 throw new SocketException();
-            return new List<Type> { typeof(TimeSeries), typeof(MVTimeSeries) };
+            return new List<Type> {typeof(TimeSeries), typeof(MVTimeSeries)};
         }
 
         public override List<Type> GetOutputTypesFor(int socket)
         {
             if (socket != 0)
                 throw new SocketException();
-            return new List<Type> {typeof (TimeSeries), typeof (MVTimeSeries)};
+            return new List<Type> {typeof(TimeSeries), typeof(MVTimeSeries)};
         }
 
         public override void Recompute()
@@ -125,7 +130,7 @@ namespace CronoSeries.ABMath.ModelFramework.Transforms
             var lts = GetInput(0) as Longitudinal;
 
             if (Spacing == 0)
-                Spacing = 1;  // just fix it here: this is for backwards-compatibility
+                Spacing = 1; // just fix it here: this is for backwards-compatibility
 
             mvDifferences = null;
             differences = null;
@@ -135,29 +140,29 @@ namespace CronoSeries.ABMath.ModelFramework.Transforms
             if (mts != null)
             {
                 mvDifferences = new MVTimeSeries(mts.Dimension) {Title = "Diffs"};
-                for (int i = 0; i < mts.Dimension; ++i)
+                for (var i = 0; i < mts.Dimension; ++i)
                     mvDifferences.SubTitle[i] = mts.SubTitle[i];
                 var zerov = new double[mts.Dimension];
 
                 if (!LeftTimeStamps && PadWithZeroes)
-                    for (int t = 0; t < Lag; ++t)
-                        if (t%Spacing == Phase)
-                           mvDifferences.Add(mts.TimeStamp(t), zerov, false);
+                    for (var t = 0; t < Lag; ++t)
+                        if (t % Spacing == Phase)
+                            mvDifferences.Add(mts.TimeStamp(t), zerov, false);
 
-                for (int t = Phase; t < mts.Count; t += Spacing)
+                for (var t = Phase; t < mts.Count; t += Spacing)
                     if (t >= Lag)
-                {
-                    var diff = new double[mts.Dimension];
-                    for (int j = 0; j < mts.Dimension; ++j)
-                        diff[j] = mts[t][j] - mts[t - Lag][j];
-                    var stamp = LeftTimeStamps ? mts.TimeStamp(t - Lag) : mts.TimeStamp(t);
-                    mvDifferences.Add(stamp, diff, false);
-                }
+                    {
+                        var diff = new double[mts.Dimension];
+                        for (var j = 0; j < mts.Dimension; ++j)
+                            diff[j] = mts[t][j] - mts[t - Lag][j];
+                        var stamp = LeftTimeStamps ? mts.TimeStamp(t - Lag) : mts.TimeStamp(t);
+                        mvDifferences.Add(stamp, diff, false);
+                    }
 
                 if (LeftTimeStamps && PadWithZeroes)
-                    for (int t = mts.Count - Lag; t < mts.Count; ++t)
+                    for (var t = mts.Count - Lag; t < mts.Count; ++t)
                         if (t % Spacing == Phase)
-                           mvDifferences.Add(mts.TimeStamp(t), zerov, false);
+                            mvDifferences.Add(mts.TimeStamp(t), zerov, false);
             }
 
             if (uts != null)
@@ -165,39 +170,41 @@ namespace CronoSeries.ABMath.ModelFramework.Transforms
                 differences = new TimeSeries {Title = $"Diff({uts.Title})"};
 
                 if (!LeftTimeStamps && PadWithZeroes)
-                    for (int t = 0; t < Lag; ++t)
+                    for (var t = 0; t < Lag; ++t)
                         if (t % Spacing == Phase)
-                           differences.Add(uts.TimeStamp(t), 0, false);
+                            differences.Add(uts.TimeStamp(t), 0, false);
 
-                for (int t = Phase; t < uts.Count; t+=Spacing)
+                for (var t = Phase; t < uts.Count; t += Spacing)
                     if (t >= Lag)
-                {
-                    var diff = uts[t] - uts[t - Lag];
-                    var stamp = LeftTimeStamps ? uts.TimeStamp(t - Lag) : uts.TimeStamp(t);
-                    differences.Add(stamp, diff, false);
-                }
+                    {
+                        var diff = uts[t] - uts[t - Lag];
+                        var stamp = LeftTimeStamps ? uts.TimeStamp(t - Lag) : uts.TimeStamp(t);
+                        differences.Add(stamp, diff, false);
+                    }
 
                 if (LeftTimeStamps && PadWithZeroes)
-                    for (int t = uts.Count - Lag; t < uts.Count; ++t)
+                    for (var t = uts.Count - Lag; t < uts.Count; ++t)
                         if (t % Spacing == Phase)
-                           differences.Add(uts.TimeStamp(t), 0, false);
+                            differences.Add(uts.TimeStamp(t), 0, false);
             }
 
             if (lts != null)
             {
                 var segments = new List<TimeSeries>(lts.Count);
-                for (int i=0 ; i<lts.Count ; ++i)
+                for (var i = 0; i < lts.Count; ++i)
                 {
                     uts = lts[i];
                     var du = new TimeSeries();
-                    for (int t = Lag; t < uts.Count; ++t)
+                    for (var t = Lag; t < uts.Count; ++t)
                     {
-                        double diff = uts[t] - uts[t - Lag];
+                        var diff = uts[t] - uts[t - Lag];
                         var stamp = LeftTimeStamps ? uts.TimeStamp(t - Lag) : uts.TimeStamp(t);
                         du.Add(stamp, diff, false);
                     }
+
                     segments.Add(du);
                 }
+
                 longDifferences = new Longitudinal(segments);
             }
 

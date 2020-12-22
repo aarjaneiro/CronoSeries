@@ -9,13 +9,12 @@ namespace CronoSeries.ABMath.ModelFramework.Transforms
     [Serializable]
     public class AggregateTransform : TimeSeriesTransformation
     {
-        [Category("Parameter"), Description("Period over which to aggregate")]
-        public int Period { get; set; }
-
         public AggregateTransform()
         {
-            Period = 4;  // default
+            Period = 4; // default
         }
+
+        [Category("Parameter")] [Description("Period over which to aggregate")] public int Period { get; set; }
 
         public override int NumInputs()
         {
@@ -64,13 +63,13 @@ namespace CronoSeries.ABMath.ModelFramework.Transforms
 
             var series = GetInputBundle();
             if (series.Count != 1)
-                return;  // something wrong!
+                return; // something wrong!
 
             var input = series[0];
 
             var agg = new TimeSeries();
             double accumulated = 0;
-            for (int t = 0; t < input.Count; ++t )
+            for (var t = 0; t < input.Count; ++t)
             {
                 accumulated += input[t];
                 if (t % Period == Period - 1)
@@ -89,15 +88,14 @@ namespace CronoSeries.ABMath.ModelFramework.Transforms
         {
             if (socket >= NumInputs())
                 throw new SocketException();
-            return new List<Type> { typeof(TimeSeries) };
+            return new List<Type> {typeof(TimeSeries)};
         }
 
         public override List<Type> GetOutputTypesFor(int socket)
         {
             if (socket != 0)
                 throw new SocketException();
-            return new List<Type> { typeof(TimeSeries) };
+            return new List<Type> {typeof(TimeSeries)};
         }
-
     }
 }

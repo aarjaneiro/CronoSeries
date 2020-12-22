@@ -1,4 +1,5 @@
 #region License Info
+
 //Component of Cronos Package, http://www.codeplex.com/cronos
 //Copyright (C) 2009 Anthony Brockwell
 
@@ -15,38 +16,38 @@
 //You should have received a copy of the GNU General Public License
 //along with this program; if not, write to the Free Software
 //Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
 #endregion
 
 using System;
 using MathNet.Numerics.LinearAlgebra;
 
-namespace ABMath.IridiumExtensions
+namespace CronoSeries.ABMath.IridiumExtensions
 {
     public static class MatrixExtensionsI
     {
         public static Vector<double> ToVector(this Matrix<double> m)
         {
             var retval = Vector<double>.Build.Dense(m.RowCount * m.ColumnCount);
-            for (int r = 0; r < m.RowCount; ++r)
-                for (int c = 0; c < m.ColumnCount; ++c )
-                    retval[c * m.RowCount + r] = m[r, c];
+            for (var r = 0; r < m.RowCount; ++r)
+            for (var c = 0; c < m.ColumnCount; ++c)
+                retval[c * m.RowCount + r] = m[r, c];
             return retval;
         }
 
         public static Matrix<double> ToMatrix(this Vector<double> v, int rows, int cols)
         {
-            if (rows*cols != v.Count)
+            if (rows * cols != v.Count)
                 throw new ApplicationException("Invalid Vector to Matrix conversion, rows and cols not valid.");
-            Matrix<double> newres = Matrix<double>.Build.Dense(rows, cols);
-            int row = -1;
-            for (int i = 0; i < v.Count; i++)
+            var newres = Matrix<double>.Build.Dense(rows, cols);
+            var row = -1;
+            for (var i = 0; i < v.Count; i++)
             {
-                if (i % cols == 0)
-                {
-                    row++;
-                }
+                if (i % cols == 0) row++;
+
                 newres[row, i] = v[i];
             }
+
             return newres;
             //var stuff = v.ToArray();
             //return Matrix<double>.Build.D
@@ -59,19 +60,19 @@ namespace ABMath.IridiumExtensions
         }
 
         /// <summary>
-        /// Returns a new matrix object containing a column of the original matrix.
+        ///     Returns a new matrix object containing a column of the original matrix.
         /// </summary>
         public static Vector<double> ExtractColumn(this Matrix<double> matrix, int columnIndex)
         {
-            var retval = Vector<double>.Build.Dense(matrix.RowCount);//new Vector(matrix.RowCount);
-            for (int i = 0; i < matrix.RowCount; ++i)
+            var retval = Vector<double>.Build.Dense(matrix.RowCount); //new Vector(matrix.RowCount);
+            for (var i = 0; i < matrix.RowCount; ++i)
                 retval[i] = matrix[i, columnIndex];
             return retval;
         }
-  
+
 
         /// <summary>
-        /// Returns new matrix containing values of submatrix of original.
+        ///     Returns new matrix containing values of submatrix of original.
         /// </summary>
         /// <param name="matrix">this matrix</param>
         /// <param name="r0">top row</param>
@@ -81,31 +82,31 @@ namespace ABMath.IridiumExtensions
         /// <returns></returns>
         public static Matrix<double> SubMatrix(this Matrix<double> matrix, int r0, int c0, int r1, int c1)
         {
-            if ((r0 < 0) || (r1 < 0) || (r0 >= r1) || (r0 > matrix.RowCount - 1) || (r1 > matrix.RowCount))
+            if (r0 < 0 || r1 < 0 || r0 >= r1 || r0 > matrix.RowCount - 1 || r1 > matrix.RowCount)
                 throw new ApplicationException("Invalid row specification in SubMatrix call.");
-            if ((c0 < 0) || (c1 < 0) || (c0 >= c1) || (c0 > matrix.ColumnCount - 1) || (c1 > matrix.ColumnCount))
+            if (c0 < 0 || c1 < 0 || c0 >= c1 || c0 > matrix.ColumnCount - 1 || c1 > matrix.ColumnCount)
                 throw new ApplicationException("Invalid col specification in SubMatrix call.");
             int newrowcount = r1 - r0, newcolcount = c1 - c0;
             var retval = Matrix<double>.Build.Dense(newrowcount, newcolcount);
 
-            for (int i = r0; i < r1; ++i)
-                for (int j = c0; j < c1; ++j)
-                    retval[i - r0, j - c0] = matrix[i, j];
+            for (var i = r0; i < r1; ++i)
+            for (var j = c0; j < c1; ++j)
+                retval[i - r0, j - c0] = matrix[i, j];
 
             return retval;
         }
 
 
-
         /// <summary>
-        /// This function creates a matrix [[A B];[C D]]
+        ///     This function creates a matrix [[A B];[C D]]
         /// </summary>
         /// <param name="A"></param>
         /// <param name="B"></param>
         /// <param name="C"></param>
         /// <param name="D"></param>
         /// <returns></returns>
-        public static Matrix<double> CreateBlockMatrixFrom(Matrix<double> A, Matrix<double> B, Matrix<double> C, Matrix<double> D)
+        public static Matrix<double> CreateBlockMatrixFrom(Matrix<double> A, Matrix<double> B, Matrix<double> C,
+            Matrix<double> D)
         {
             int nrA = A.RowCount, nrB = B.RowCount, nrC = C.RowCount, nrD = D.RowCount;
             int ncA = A.ColumnCount, ncB = B.ColumnCount, ncC = C.ColumnCount, ncD = D.ColumnCount;
@@ -114,25 +115,25 @@ namespace ABMath.IridiumExtensions
                 throw new ArgumentException("Invalid sizes of matrices going into block matrix.");
 
             var block = Matrix<double>.Build.Dense(nrA + nrC, ncB + ncD);
-            for (int i = 0; i < nrA; ++i)
-                for (int j = 0; j < ncA; ++j)
-                    block[i, j] = A[i, j];
-            for (int i = 0; i < nrB; ++i)
-                for (int j = 0; j < ncB; ++j)
-                    block[i, j + ncA] = B[i, j];
-            for (int i = 0; i < nrC; ++i)
-                for (int j = 0; j < ncC; ++j)
-                    block[i+nrA, j] = C[i, j];
-            for (int i = 0; i < nrD; ++i)
-                for (int j = 0; j < ncD; ++j)
-                    block[i + nrA, j + ncA] = D[i, j];
+            for (var i = 0; i < nrA; ++i)
+            for (var j = 0; j < ncA; ++j)
+                block[i, j] = A[i, j];
+            for (var i = 0; i < nrB; ++i)
+            for (var j = 0; j < ncB; ++j)
+                block[i, j + ncA] = B[i, j];
+            for (var i = 0; i < nrC; ++i)
+            for (var j = 0; j < ncC; ++j)
+                block[i + nrA, j] = C[i, j];
+            for (var i = 0; i < nrD; ++i)
+            for (var j = 0; j < ncD; ++j)
+                block[i + nrA, j + ncA] = D[i, j];
 
             return block;
         }
 
         /// <summary>
-        /// Combines 2 matrices together horizontally and returns new matrix.
-        /// Matlab equivalent, returns [m1 m2].
+        ///     Combines 2 matrices together horizontally and returns new matrix.
+        ///     Matlab equivalent, returns [m1 m2].
         /// </summary>
         /// <param name="m1">matrix to go on left</param>
         /// <param name="m2">matrix to go on right</param>
@@ -144,11 +145,11 @@ namespace ABMath.IridiumExtensions
 
             var retval = Matrix<double>.Build.Dense(m1.RowCount, m1.ColumnCount + m2.ColumnCount);
 
-            for (int i = 0; i < m1.RowCount; ++i)
+            for (var i = 0; i < m1.RowCount; ++i)
             {
-                for (int j = 0; j < m1.ColumnCount; ++j)
+                for (var j = 0; j < m1.ColumnCount; ++j)
                     retval[i, j] = m1[i, j];
-                for (int j = 0; j < m2.ColumnCount; ++j)
+                for (var j = 0; j < m2.ColumnCount; ++j)
                     retval[i, j + m1.ColumnCount] = m2[i, j];
             }
 
@@ -156,8 +157,8 @@ namespace ABMath.IridiumExtensions
         }
 
         /// <summary>
-        /// Combines 2 matrices together horizontally and returns new matrix.
-        /// Matlab equivalent, returns [m1 m2].
+        ///     Combines 2 matrices together horizontally and returns new matrix.
+        ///     Matlab equivalent, returns [m1 m2].
         /// </summary>
         /// <param name="m1">matrix to go on left</param>
         /// <param name="m2">matrix to go on right</param>
@@ -169,12 +170,12 @@ namespace ABMath.IridiumExtensions
 
             var retval = Matrix<double>.Build.Dense(m1.RowCount + m2.RowCount, m1.ColumnCount);
 
-            for (int j = 0; j < retval.ColumnCount; ++j)
+            for (var j = 0; j < retval.ColumnCount; ++j)
             {
-                for (int i = 0; i < m1.ColumnCount; ++i)
+                for (var i = 0; i < m1.ColumnCount; ++i)
                     retval[i, j] = m1[i, j];
-                for (int i = 0; i < m2.ColumnCount; ++i)
-                    retval[i+m1.RowCount, j] = m2[i, j];
+                for (var i = 0; i < m2.ColumnCount; ++i)
+                    retval[i + m1.RowCount, j] = m2[i, j];
             }
 
             return retval;
@@ -182,52 +183,52 @@ namespace ABMath.IridiumExtensions
 
 
         /// <summary>
-        /// Compute means down the columns of a matrix.
+        ///     Compute means down the columns of a matrix.
         /// </summary>
         /// <returns>a row vector (1xn matrix) of the column means</returns>
         public static Matrix<double> Mean(this Matrix<double> matrix)
         {
             var retval = Matrix<double>.Build.Dense(1, matrix.ColumnCount);
 
-            for (int rc = 0; rc < matrix.RowCount; ++rc)
-                for (int cc = 0; cc < matrix.ColumnCount; ++cc)
-                    retval[0, cc] += matrix[rc, cc];
+            for (var rc = 0; rc < matrix.RowCount; ++rc)
+            for (var cc = 0; cc < matrix.ColumnCount; ++cc)
+                retval[0, cc] += matrix[rc, cc];
 
-            for (int cc = 0; cc < matrix.ColumnCount; ++cc)
+            for (var cc = 0; cc < matrix.ColumnCount; ++cc)
                 retval[0, cc] /= matrix.RowCount;
 
             return retval;
         }
 
         /// <summary>
-        /// Compute covariance matrix of the collection of row-vectors making up the matrix.
+        ///     Compute covariance matrix of the collection of row-vectors making up the matrix.
         /// </summary>
         /// <returns>the covariance matrix</returns>
         public static Matrix<double> Covariance(this Matrix<double> matrix)
         {
-            Matrix<double> tmt = matrix.Clone();
+            var tmt = matrix.Clone();
             tmt.Transpose();
-            Matrix<double> xtx = tmt*matrix*(1.0/matrix.RowCount);  // this is now E[X^T X]
+            var xtx = tmt * matrix * (1.0 / matrix.RowCount); // this is now E[X^T X]
 
-            Matrix<double> y = matrix.Mean();
-            Matrix<double> yt = y.Clone();
+            var y = matrix.Mean();
+            var yt = y.Clone();
             yt.Transpose();
-            Matrix<double> yty = yt*y;
+            var yty = yt * y;
 
-            return (xtx - yty);
+            return xtx - yty;
         }
 
         /// <summary>
-        /// Compute covariance matrix of the collection of row-vectors making up the matrix.
+        ///     Compute covariance matrix of the collection of row-vectors making up the matrix.
         /// </summary>
         /// <returns>the covariance matrix</returns>
         public static Matrix<double> Correlation(this Matrix<double> matrix)
         {
-            Matrix<double> temp = matrix.Covariance();
-            Matrix<double> copied = temp.Clone();
-            for (int i = 0; i < copied.RowCount; ++i)
-                for (int j = 0; j < copied.ColumnCount; ++j )
-                    copied[i, j] /= Math.Sqrt(temp[i, i]*temp[j, j]);
+            var temp = matrix.Covariance();
+            var copied = temp.Clone();
+            for (var i = 0; i < copied.RowCount; ++i)
+            for (var j = 0; j < copied.ColumnCount; ++j)
+                copied[i, j] /= Math.Sqrt(temp[i, i] * temp[j, j]);
             return copied;
         }
     }
