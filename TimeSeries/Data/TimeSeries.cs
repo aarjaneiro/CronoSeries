@@ -97,16 +97,6 @@ namespace CronoSeries.TimeSeries.Data
             return string.Format("{0}{1}({2})", Title, Environment.NewLine, Count);
         }
 
-        //public Color GetBackgroundColor()
-        //{
-        //    return Color.GreenYellow;
-        //}
-
-        //public Icon GetIcon()
-        //{
-        //    return null;
-        //}
-
         public string ToolTipText
         {
             get => toolTipText;

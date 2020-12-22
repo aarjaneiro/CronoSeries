@@ -324,7 +324,7 @@ namespace CronoSeries.TimeSeries.Models
             return parameter;
         }
 
-        public override object SimulateData(object inputs, int randomSeed)
+        public override Data.TimeSeries SimulateData(List<DateTime> inputs, int randomSeed)
         {
             throw new NotImplementedException();
         }

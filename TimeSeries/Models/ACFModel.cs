@@ -338,7 +338,7 @@ namespace CronoSeries.TimeSeries.Models
             return newParms;
         }
 
-        public override object SimulateData(object inputs, int randomSeed)
+        public override Data.TimeSeries SimulateData(List<DateTime> inputs, int randomSeed)
         {
             var times = inputs as List<DateTime>;
             if (times == null)

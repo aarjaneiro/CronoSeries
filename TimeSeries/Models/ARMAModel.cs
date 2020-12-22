@@ -600,11 +600,10 @@ namespace CronoSeries.TimeSeries.Models
             return newParms;
         }
 
-        public override object SimulateData(object inputs, int randomSeed)
+        public override Data.TimeSeries SimulateData(List<DateTime> inputs, int randomSeed)
         {
-            var times = inputs as List<DateTime>;
-            if (times == null)
-                return null; // inputs should be a list of DateTimes
+            var times = inputs;
+
 
             // Simulation here uses the Durbin-Levinson recursions to simulate from
             // successive one-step predictive d-ns.

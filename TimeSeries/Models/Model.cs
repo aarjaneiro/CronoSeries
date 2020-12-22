@@ -149,13 +149,13 @@ namespace CronoSeries.TimeSeries.Models
         /// <summary>
         ///     This function must simulate from the current model.
         /// </summary>
-        /// <param name="inputs">
+        /// <param name="dateTimes">
         ///     these may have different interpretations, but
         ///     for time series, is typically an IList of DateTime objects
         /// </param>
         /// <param name="randomSeed">random number seed</param>
         /// <returns></returns>
-        public abstract object SimulateData(object inputs, int randomSeed);
+        public abstract Data.TimeSeries SimulateData(List<DateTime> dateTimes, int randomSeed);
 
         /// <summary>
         ///     This function generates forecasts (or fitted values) for the specified inputs,

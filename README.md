@@ -19,6 +19,7 @@ TODO:
 -----
 1. Implement tests.
 2. Add examples.
+3. Fix types (e.g., `object` → specific type implementations)
 
 **Interested in helping out?** 
 

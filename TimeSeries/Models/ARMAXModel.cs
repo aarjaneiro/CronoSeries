@@ -456,7 +456,7 @@ namespace CronoSeries.TimeSeries.Models
             return full;
         }
 
-        public override object SimulateData(object inputs, int randomSeed)
+        public override Data.TimeSeries SimulateData(List<DateTime> inputs, int randomSeed)
         {
             Console.WriteLine("ARMAX simulations use exogenous input = 0 for now.  To be fixed in the future ...");
             return base.SimulateData(inputs, randomSeed);

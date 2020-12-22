@@ -520,7 +520,7 @@ namespace CronoSeries.TimeSeries.Models
             return string.Format("GARCH{0}({1:0},{2:0})", Environment.NewLine, dataOrder, intrinsicOrder);
         }
 
-        public override object SimulateData(object inputs, int simSeed)
+        public override Data.TimeSeries SimulateData(List<DateTime> inputs, int simSeed)
         {
             var times = inputs as List<DateTime>;
             if (times == null)
