@@ -1,23 +1,17 @@
-﻿#region License Info
+﻿/*
+Derived from the Cronos Package, http://www.codeplex.com/cronos
+Copyright (C) 2009 Anthony Brockwell
 
-//Component of Cronos Package, http://www.codeplex.com/cronos
-//Copyright (C) 2009 Anthony Brockwell
+This program is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License
+as published by the Free Software Foundation; either version 2
+of the License, or (at your option) any later version.
 
-//This program is free software; you can redistribute it and/or
-//modify it under the terms of the GNU General Public License
-//as published by the Free Software Foundation; either version 2
-//of the License, or (at your option) any later version.
-
-//This program is distributed in the hope that it will be useful,
-//but WITHOUT ANY WARRANTY; without even the implied warranty of
-//MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//GNU General Public License for more details.
-
-//You should have received a copy of the GNU General Public License
-//along with this program; if not, write to the Free Software
-//Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-
-#endregion
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+*/
 
 using System;
 using System.Collections.Generic;
@@ -33,6 +27,8 @@ namespace CronoSeries.ABMath.ModelFramework.Data
     public class Longitudinal : IConnectable
     {
         private List<TimeSeries> Components;
+
+        private string toolTipText;
 
         public Longitudinal()
         {
@@ -63,55 +59,6 @@ namespace CronoSeries.ABMath.ModelFramework.Data
                 return Components.Count;
             }
         }
-
-        public double SampleMean()
-        {
-            double sum = 0;
-            var count = 0;
-            foreach (var c in Components)
-            {
-                for (var t = 0; t < c.Count; ++t)
-                    sum += c[t];
-                count += c.Count;
-            }
-
-            return sum / count;
-        }
-
-        public Vector<double> SampleACF(int maxLag)
-        {
-            var retval = Vector<double>.Build.Dense(maxLag + 1);
-            retval[0] = 1.0;
-            var m = MaxCount;
-            var mean = SampleMean();
-
-            for (var h = 0; h <= maxLag; ++h)
-            {
-                var tc = m - h;
-                double tx = 0;
-                var localCount = 0;
-                for (var i = 0; i < Count; ++i)
-                for (var t = 0; t < tc; ++t)
-                    if (t + h < Components[i].Count)
-                    {
-                        tx += (Components[i][t] - mean) * (Components[i][t + h] - mean);
-                        ++localCount;
-                    }
-
-                if (localCount > 0)
-                    tx /= localCount;
-                else
-                    tx = double.NaN;
-                retval[h] = tx;
-            }
-
-            retval /= retval[0];
-            return retval;
-        }
-
-        #region IConnectable Stuff
-
-        private string toolTipText;
 
         public int NumInputs()
         {
@@ -187,6 +134,49 @@ namespace CronoSeries.ABMath.ModelFramework.Data
             set => toolTipText = value;
         }
 
-        #endregion
+        public double SampleMean()
+        {
+            double sum = 0;
+            var count = 0;
+            foreach (var c in Components)
+            {
+                for (var t = 0; t < c.Count; ++t)
+                    sum += c[t];
+                count += c.Count;
+            }
+
+            return sum / count;
+        }
+
+        public Vector<double> SampleACF(int maxLag)
+        {
+            var retval = Vector<double>.Build.Dense(maxLag + 1);
+            retval[0] = 1.0;
+            var m = MaxCount;
+            var mean = SampleMean();
+
+            for (var h = 0; h <= maxLag; ++h)
+            {
+                var tc = m - h;
+                double tx = 0;
+                var localCount = 0;
+                for (var i = 0; i < Count; ++i)
+                for (var t = 0; t < tc; ++t)
+                    if (t + h < Components[i].Count)
+                    {
+                        tx += (Components[i][t] - mean) * (Components[i][t + h] - mean);
+                        ++localCount;
+                    }
+
+                if (localCount > 0)
+                    tx /= localCount;
+                else
+                    tx = double.NaN;
+                retval[h] = tx;
+            }
+
+            retval /= retval[0];
+            return retval;
+        }
     }
 }

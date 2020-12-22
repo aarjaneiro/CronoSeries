@@ -1,23 +1,17 @@
-﻿#region License Info
+﻿/*
+Derived from the Cronos Package, http://www.codeplex.com/cronos
+Copyright (C) 2009 Anthony Brockwell
 
-//Component of Cronos Package, http://www.codeplex.com/cronos
-//Copyright (C) 2009 Anthony Brockwell
+This program is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License
+as published by the Free Software Foundation; either version 2
+of the License, or (at your option) any later version.
 
-//This program is free software; you can redistribute it and/or
-//modify it under the terms of the GNU General Public License
-//as published by the Free Software Foundation; either version 2
-//of the License, or (at your option) any later version.
-
-//This program is distributed in the hope that it will be useful,
-//but WITHOUT ANY WARRANTY; without even the implied warranty of
-//MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//GNU General Public License for more details.
-
-//You should have received a copy of the GNU General Public License
-//along with this program; if not, write to the Free Software
-//Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-
-#endregion
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+*/
 
 
 using System;
@@ -70,6 +64,30 @@ namespace CronoSeries.ABMath.ModelFramework.Transforms
         [Category("Parameter")]
         [Description("List of days to be skipped")]
         public List<DateTime> SkipDates { get; set; }
+
+        public int NumAuxiliaryFunctions()
+        {
+            return 2;
+        }
+
+        public string AuxiliaryFunctionName(int index)
+        {
+            if (index == 0)
+                return "ArrayCopy";
+            if (index == 1)
+                return "AutoRange";
+            return null;
+        }
+
+        public string AuxiliaryFunctionHelp(int index)
+        {
+            if (index == 0)
+                return
+                    "If SamplingBaseOffsets parameter contains more than one offset, then this function will copy samples to the clipboard, with each row containing all offsets relative to the base sampling point.";
+            if (index == 1)
+                return "Sets beginning and end times of the transformation to match those of the current input.";
+            return null;
+        }
 
         public override string GetDescription()
         {
@@ -229,33 +247,5 @@ namespace CronoSeries.ABMath.ModelFramework.Transforms
                 throw new SocketException();
             return new List<Type> {typeof(TimeSeries), typeof(MVTimeSeries)};
         }
-
-        #region Auxiliary Functions
-
-        public int NumAuxiliaryFunctions()
-        {
-            return 2;
-        }
-
-        public string AuxiliaryFunctionName(int index)
-        {
-            if (index == 0)
-                return "ArrayCopy";
-            if (index == 1)
-                return "AutoRange";
-            return null;
-        }
-
-        public string AuxiliaryFunctionHelp(int index)
-        {
-            if (index == 0)
-                return
-                    "If SamplingBaseOffsets parameter contains more than one offset, then this function will copy samples to the clipboard, with each row containing all offsets relative to the base sampling point.";
-            if (index == 1)
-                return "Sets beginning and end times of the transformation to match those of the current input.";
-            return null;
-        }
-
-        #endregion
     }
 }

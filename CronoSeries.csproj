@@ -4,6 +4,12 @@
         <TargetFramework>netcoreapp3.1</TargetFramework>
         <PackageVersion>0.1.0</PackageVersion>
         <Copyright>GPLv3</Copyright>
+        <Title>CronoSeries</Title>
+        <Authors>Aaron Janeiro Stone</Authors>
+        <Description>A fork of Cronos with a focus on being a Time Series class library. </Description>
+        <PackageProjectUrl>https://github.com/aarjaneiro/CronoSeries</PackageProjectUrl>
+        <PackageLicenseUrl>https://github.com/aarjaneiro/CronoSeries/blob/master/LICENSE</PackageLicenseUrl>
+        <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     </PropertyGroup>
 
     <ItemGroup>

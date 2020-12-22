@@ -1,5 +1,5 @@
 ﻿using System;
-using CronoSeries.ABMath.Forms.IridiumExtensions;
+using CronoSeries.ABMath.IridiumExtensions;
 using MathNet.Numerics.Distributions;
 using MathNet.Numerics.LinearAlgebra;
 

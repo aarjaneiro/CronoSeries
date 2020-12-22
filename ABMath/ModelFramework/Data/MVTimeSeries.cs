@@ -1,23 +1,17 @@
-﻿#region License Info
+﻿/*
+Derived from the Cronos Package, http://www.codeplex.com/cronos
+Copyright (C) 2009 Anthony Brockwell
 
-//Component of Cronos Package, http://www.codeplex.com/cronos
-//Copyright (C) 2009 Anthony Brockwell
+This program is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License
+as published by the Free Software Foundation; either version 2
+of the License, or (at your option) any later version.
 
-//This program is free software; you can redistribute it and/or
-//modify it under the terms of the GNU General Public License
-//as published by the Free Software Foundation; either version 2
-//of the License, or (at your option) any later version.
-
-//This program is distributed in the hope that it will be useful,
-//but WITHOUT ANY WARRANTY; without even the implied warranty of
-//MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//GNU General Public License for more details.
-
-//You should have received a copy of the GNU General Public License
-//along with this program; if not, write to the Free Software
-//Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-
-#endregion
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+*/
 
 
 using System;
@@ -31,6 +25,18 @@ namespace CronoSeries.ABMath.ModelFramework.Data
     [Serializable]
     public class MVTimeSeries : TimeSeriesBase<double[]>, ICopyable, IConnectable
     {
+        //public Color GetBackgroundColor()
+        //{
+        //    return Color.GreenYellow;
+        //}
+
+        //public Icon GetIcon()
+        //{
+        //    return null;
+        //}
+
+        private string toolTipText;
+
         public MVTimeSeries()
         {
             Dimension = 1;
@@ -102,6 +108,71 @@ namespace CronoSeries.ABMath.ModelFramework.Data
         }
 
         public string[] SubTitle { get; set; }
+
+        public int NumInputs()
+        {
+            return 0;
+        }
+
+        public int NumOutputs()
+        {
+            return 1;
+        }
+
+        public virtual List<Type> GetOutputTypesFor(int socket)
+        {
+            return new List<Type> {typeof(MVTimeSeries)};
+        }
+
+        public bool InputIsFree(int socket)
+        {
+            return false;
+        }
+
+        public bool SetInput(int socket, object item, StringBuilder failMsg)
+        {
+            return false; // cannot set input
+        }
+
+        public object GetOutput(int socket)
+        {
+            if (socket == 0)
+                return this;
+            throw new ApplicationException("MVTimeSeries only has output socket 0.");
+        }
+
+        public string GetInputName(int index)
+        {
+            return null;
+        }
+
+        public string GetOutputName(int index)
+        {
+            return "TimeSeries";
+        }
+
+        public List<Type> GetAllowedInputTypesFor(int socket)
+        {
+            return null;
+        }
+
+        public string GetDescription()
+        {
+            return string.Format("MV Time Series (Length={0})", Count);
+        }
+
+        public string GetShortDescription()
+        {
+            if (Title == null)
+                return string.Format("MVTS({0})", Count);
+            return string.Format("{0}{1}({2})", Title, Environment.NewLine, Count);
+        }
+
+        public string ToolTipText
+        {
+            get => toolTipText;
+            set => toolTipText = value;
+        }
 
         public string CreateFullString(int detailLevel)
         {
@@ -263,85 +334,6 @@ namespace CronoSeries.ABMath.ModelFramework.Data
             return acf;
         }
 
-        #region IConnectable Members
-
-        public int NumInputs()
-        {
-            return 0;
-        }
-
-        public int NumOutputs()
-        {
-            return 1;
-        }
-
-        public virtual List<Type> GetOutputTypesFor(int socket)
-        {
-            return new List<Type> {typeof(MVTimeSeries)};
-        }
-
-        public bool InputIsFree(int socket)
-        {
-            return false;
-        }
-
-        public bool SetInput(int socket, object item, StringBuilder failMsg)
-        {
-            return false; // cannot set input
-        }
-
-        public object GetOutput(int socket)
-        {
-            if (socket == 0)
-                return this;
-            throw new ApplicationException("MVTimeSeries only has output socket 0.");
-        }
-
-        public string GetInputName(int index)
-        {
-            return null;
-        }
-
-        public string GetOutputName(int index)
-        {
-            return "TimeSeries";
-        }
-
-        public List<Type> GetAllowedInputTypesFor(int socket)
-        {
-            return null;
-        }
-
-        public string GetDescription()
-        {
-            return string.Format("MV Time Series (Length={0})", Count);
-        }
-
-        public string GetShortDescription()
-        {
-            if (Title == null)
-                return string.Format("MVTS({0})", Count);
-            return string.Format("{0}{1}({2})", Title, Environment.NewLine, Count);
-        }
-
-        //public Color GetBackgroundColor()
-        //{
-        //    return Color.GreenYellow;
-        //}
-
-        //public Icon GetIcon()
-        //{
-        //    return null;
-        //}
-
-        private string toolTipText;
-
-        public string ToolTipText
-        {
-            get => toolTipText;
-            set => toolTipText = value;
-        }
-
         public int NumAuxiliaryFunctions()
         {
             return 0;
@@ -356,7 +348,5 @@ namespace CronoSeries.ABMath.ModelFramework.Data
         {
             return false;
         }
-
-        #endregion
     }
 }

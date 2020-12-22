@@ -1,23 +1,17 @@
-﻿#region License Info
+﻿/*
+Derived from the Cronos Package, http://www.codeplex.com/cronos
+Copyright (C) 2009 Anthony Brockwell
 
-//Component of Cronos Package, http://www.codeplex.com/cronos
-//Copyright (C) 2009 Anthony Brockwell
+This program is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License
+as published by the Free Software Foundation; either version 2
+of the License, or (at your option) any later version.
 
-//This program is free software; you can redistribute it and/or
-//modify it under the terms of the GNU General Public License
-//as published by the Free Software Foundation; either version 2
-//of the License, or (at your option) any later version.
-
-//This program is distributed in the hope that it will be useful,
-//but WITHOUT ANY WARRANTY; without even the implied warranty of
-//MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//GNU General Public License for more details.
-
-//You should have received a copy of the GNU General Public License
-//along with this program; if not, write to the Free Software
-//Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-
-#endregion
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+*/
 
 using System;
 using System.Collections.Generic;
@@ -31,16 +25,12 @@ namespace CronoSeries.ABMath.ModelFramework.Models
     [Serializable]
     public abstract class Model : IConnectable
     {
-        #region ParameterState enum
-
         public enum ParameterState
         {
             Free,
             Locked,
             Consequential
         }
-
-        #endregion
 
         private double currentPenalty;
 
@@ -73,6 +63,54 @@ namespace CronoSeries.ABMath.ModelFramework.Models
         }
 
         public double GoodnessOfFit { get; protected set; }
+
+        public abstract Vector<double> Parameters { get; set; }
+        public ParameterState[] ParameterStates { get; set; }
+
+        public abstract int NumInputs();
+        public abstract int NumOutputs();
+        public abstract string GetInputName(int socket);
+        public abstract string GetOutputName(int socket);
+
+        public virtual List<Type> GetAllowedInputTypesFor(int socket)
+        {
+            return new List<Type>();
+        }
+
+        public virtual List<Type> GetOutputTypesFor(int socket)
+        {
+            return null;
+        }
+
+        public abstract bool InputIsFree(int socket);
+        public abstract bool SetInput(int socket, object item, StringBuilder failMsg);
+        public abstract object GetOutput(int socket);
+
+        public string GetDescription()
+        {
+            return Description;
+        }
+
+        public virtual string GetShortDescription()
+        {
+            return Description;
+        }
+
+        //public Color GetBackgroundColor()
+        //{
+        //    return Color.LightBlue;
+        //}
+
+        //public Icon GetIcon()
+        //{
+        //    return null;
+        //}
+
+        public string ToolTipText
+        {
+            get => toolTipText;
+            set => toolTipText = value;
+        }
 
         public bool CanUseMLE()
         {
@@ -318,10 +356,6 @@ namespace CronoSeries.ABMath.ModelFramework.Models
             return true;
         }
 
-        #region Model Parameters and Associated Functions
-
-        public abstract Vector<double> Parameters { get; set; }
-        public ParameterState[] ParameterStates { get; set; }
         public abstract string GetParameterName(int index);
         public abstract string GetParameterDescription(int index);
 
@@ -346,8 +380,6 @@ namespace CronoSeries.ABMath.ModelFramework.Models
         /// <param name="param"></param>
         /// <returns></returns>
         protected abstract bool CheckParameterValidity(Vector<double> param);
-
-        #region General Utility Functions for Parameter Manipulation
 
         private int NumParametersOfType(ParameterState state)
         {
@@ -409,58 +441,5 @@ namespace CronoSeries.ABMath.ModelFramework.Models
                     retval[j++] = fullParameters[i];
             return retval;
         }
-
-        #endregion
-
-        #endregion
-
-        #region IConnectable Members
-
-        public abstract int NumInputs();
-        public abstract int NumOutputs();
-        public abstract string GetInputName(int socket);
-        public abstract string GetOutputName(int socket);
-
-        public virtual List<Type> GetAllowedInputTypesFor(int socket)
-        {
-            return new List<Type>();
-        }
-
-        public virtual List<Type> GetOutputTypesFor(int socket)
-        {
-            return null;
-        }
-
-        public abstract bool InputIsFree(int socket);
-        public abstract bool SetInput(int socket, object item, StringBuilder failMsg);
-        public abstract object GetOutput(int socket);
-
-        public string GetDescription()
-        {
-            return Description;
-        }
-
-        public virtual string GetShortDescription()
-        {
-            return Description;
-        }
-
-        //public Color GetBackgroundColor()
-        //{
-        //    return Color.LightBlue;
-        //}
-
-        //public Icon GetIcon()
-        //{
-        //    return null;
-        //}
-
-        public string ToolTipText
-        {
-            get => toolTipText;
-            set => toolTipText = value;
-        }
-
-        #endregion
     }
 }

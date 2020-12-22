@@ -1,23 +1,17 @@
-﻿#region License Info
+﻿/*
+Derived from the Cronos Package, http://www.codeplex.com/cronos
+Copyright (C) 2009 Anthony Brockwell
 
-//Component of Cronos Package, http://www.codeplex.com/cronos
-//Copyright (C) 2009 Anthony Brockwell
+This program is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License
+as published by the Free Software Foundation; either version 2
+of the License, or (at your option) any later version.
 
-//This program is free software; you can redistribute it and/or
-//modify it under the terms of the GNU General Public License
-//as published by the Free Software Foundation; either version 2
-//of the License, or (at your option) any later version.
-
-//This program is distributed in the hope that it will be useful,
-//but WITHOUT ANY WARRANTY; without even the implied warranty of
-//MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//GNU General Public License for more details.
-
-//You should have received a copy of the GNU General Public License
-//along with this program; if not, write to the Free Software
-//Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-
-#endregion
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+*/
 
 using System;
 using System.Collections.Generic;
@@ -38,6 +32,137 @@ namespace CronoSeries.ABMath.ModelFramework.Data
         public TimeSeries()
         {
             Dimension = 1;
+        }
+
+        public int NumInputs()
+        {
+            return 0;
+        }
+
+        public int NumOutputs()
+        {
+            return 1;
+        }
+
+        public virtual List<Type> GetOutputTypesFor(int socket)
+        {
+            return new List<Type> {typeof(TimeSeries)};
+        }
+
+        public bool InputIsFree(int socket)
+        {
+            return false;
+        }
+
+        public bool SetInput(int socket, object item, StringBuilder failMsg)
+        {
+            return false; // cannot set input
+        }
+
+        public object GetOutput(int socket)
+        {
+            if (socket == 0)
+                return this;
+            throw new ApplicationException("TimeSeriesBase only has output socket 0.");
+        }
+
+        public string GetInputName(int index)
+        {
+            return null;
+        }
+
+        public string GetOutputName(int index)
+        {
+            return "TimeSeries";
+        }
+
+        public List<Type> GetAllowedInputTypesFor(int socket)
+        {
+            return null;
+        }
+
+        public string GetDescription()
+        {
+            var sb = new StringBuilder(128);
+            if (!string.IsNullOrEmpty(Title))
+                sb.AppendFormat("{0}: ", Title);
+            sb.AppendFormat("Time Series (Length {0})", Count);
+            return sb.ToString();
+        }
+
+        public string GetShortDescription()
+        {
+            if (Title == null)
+                return string.Format("TS({0})", Count);
+            return string.Format("{0}{1}({2})", Title, Environment.NewLine, Count);
+        }
+
+        //public Color GetBackgroundColor()
+        //{
+        //    return Color.GreenYellow;
+        //}
+
+        //public Icon GetIcon()
+        //{
+        //    return null;
+        //}
+
+        public string ToolTipText
+        {
+            get => toolTipText;
+            set => toolTipText = value;
+        }
+
+        /// <summary>
+        ///     creates string that contains all info
+        /// </summary>
+        /// <param name="detailLevel">0=just values, 1=headers, 2=headers + dates</param>
+        /// <returns></returns>
+        public string CreateFullString(int detailLevel)
+        {
+            var sb = new StringBuilder(16384);
+
+            // create header
+            if (detailLevel > 0)
+            {
+                if (detailLevel > 1)
+                    sb.AppendFormat("Date\t");
+                sb.Append(Title);
+                sb.AppendLine();
+            }
+
+            // now copy data
+            for (var t = 0; t < Count; ++t)
+            {
+                var timeStamp = TimeStamp(t);
+                if (detailLevel > 1)
+                    sb.AppendFormat("{0}\t", timeStamp.ToString("MM/dd/yyyy HH:mm:ss.ffff"));
+                sb.AppendFormat("{0:0.000000}", values[t]);
+                sb.AppendLine();
+            }
+
+            return sb.ToString();
+        }
+
+        public void ParseFromFullString(string imported)
+        {
+            values = new List<double>();
+            times = new List<DateTime>();
+
+            if (imported == null)
+                return;
+            if (imported.Length < 1)
+                return;
+
+            var sreader = new StringReader(imported);
+            var collection = GetTSFromReader(sreader, true);
+            if (collection != null)
+                if (collection.Count == 1)
+                {
+                    values = collection[0].values;
+                    times = collection[0].times;
+                    Title = collection[0].Title;
+                }
         }
 
         public void SubtractConstant(double k)
@@ -339,144 +464,5 @@ namespace CronoSeries.ABMath.ModelFramework.Data
                     tx = this[t];
             return tx;
         }
-
-        #region IConnectable Members
-
-        public int NumInputs()
-        {
-            return 0;
-        }
-
-        public int NumOutputs()
-        {
-            return 1;
-        }
-
-        public virtual List<Type> GetOutputTypesFor(int socket)
-        {
-            return new List<Type> {typeof(TimeSeries)};
-        }
-
-        public bool InputIsFree(int socket)
-        {
-            return false;
-        }
-
-        public bool SetInput(int socket, object item, StringBuilder failMsg)
-        {
-            return false; // cannot set input
-        }
-
-        public object GetOutput(int socket)
-        {
-            if (socket == 0)
-                return this;
-            throw new ApplicationException("TimeSeriesBase only has output socket 0.");
-        }
-
-        public string GetInputName(int index)
-        {
-            return null;
-        }
-
-        public string GetOutputName(int index)
-        {
-            return "TimeSeries";
-        }
-
-        public List<Type> GetAllowedInputTypesFor(int socket)
-        {
-            return null;
-        }
-
-        public string GetDescription()
-        {
-            var sb = new StringBuilder(128);
-            if (!string.IsNullOrEmpty(Title))
-                sb.AppendFormat("{0}: ", Title);
-            sb.AppendFormat("Time Series (Length {0})", Count);
-            return sb.ToString();
-        }
-
-        public string GetShortDescription()
-        {
-            if (Title == null)
-                return string.Format("TS({0})", Count);
-            return string.Format("{0}{1}({2})", Title, Environment.NewLine, Count);
-        }
-
-        //public Color GetBackgroundColor()
-        //{
-        //    return Color.GreenYellow;
-        //}
-
-        //public Icon GetIcon()
-        //{
-        //    return null;
-        //}
-
-        public string ToolTipText
-        {
-            get => toolTipText;
-            set => toolTipText = value;
-        }
-
-        #endregion
-
-        #region ICopyable Members
-
-        /// <summary>
-        ///     creates string that contains all info
-        /// </summary>
-        /// <param name="detailLevel">0=just values, 1=headers, 2=headers + dates</param>
-        /// <returns></returns>
-        public string CreateFullString(int detailLevel)
-        {
-            var sb = new StringBuilder(16384);
-
-            // create header
-            if (detailLevel > 0)
-            {
-                if (detailLevel > 1)
-                    sb.AppendFormat("Date\t");
-                sb.Append(Title);
-                sb.AppendLine();
-            }
-
-            // now copy data
-            for (var t = 0; t < Count; ++t)
-            {
-                var timeStamp = TimeStamp(t);
-                if (detailLevel > 1)
-                    sb.AppendFormat("{0}\t", timeStamp.ToString("MM/dd/yyyy HH:mm:ss.ffff"));
-                sb.AppendFormat("{0:0.000000}", values[t]);
-                sb.AppendLine();
-            }
-
-            return sb.ToString();
-        }
-
-        public void ParseFromFullString(string imported)
-        {
-            values = new List<double>();
-            times = new List<DateTime>();
-
-            if (imported == null)
-                return;
-            if (imported.Length < 1)
-                return;
-
-            var sreader = new StringReader(imported);
-            var collection = GetTSFromReader(sreader, true);
-            if (collection != null)
-                if (collection.Count == 1)
-                {
-                    values = collection[0].values;
-                    times = collection[0].times;
-                    Title = collection[0].Title;
-                }
-        }
-
-        #endregion
     }
 }

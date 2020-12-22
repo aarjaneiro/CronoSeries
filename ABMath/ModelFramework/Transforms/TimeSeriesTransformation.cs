@@ -1,23 +1,17 @@
-﻿#region License Info
+﻿/*
+Derived from the Cronos Package, http://www.codeplex.com/cronos
+Copyright (C) 2009 Anthony Brockwell
 
-//Component of Cronos Package, http://www.codeplex.com/cronos
-//Copyright (C) 2009 Anthony Brockwell
+This program is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License
+as published by the Free Software Foundation; either version 2
+of the License, or (at your option) any later version.
 
-//This program is free software; you can redistribute it and/or
-//modify it under the terms of the GNU General Public License
-//as published by the Free Software Foundation; either version 2
-//of the License, or (at your option) any later version.
-
-//This program is distributed in the hope that it will be useful,
-//but WITHOUT ANY WARRANTY; without even the implied warranty of
-//MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//GNU General Public License for more details.
-
-//You should have received a copy of the GNU General Public License
-//along with this program; if not, write to the Free Software
-//Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-
-#endregion
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+*/
 
 using System;
 using System.Collections.Generic;
@@ -53,6 +47,89 @@ namespace CronoSeries.ABMath.ModelFramework.Transforms
         [Category("Result")]
         [Description("This is true if the transformation generates a valid output.")]
         public bool IsValid { get; protected set; }
+
+        public abstract int NumInputs();
+        public abstract int NumOutputs();
+
+        [Browsable(false)] public string ToolTipText { get; set; }
+
+        public virtual List<Type> GetOutputTypesFor(int socket)
+        {
+            return null;
+        }
+
+        public bool InputIsFree(int socket)
+        {
+            CheckInputsReady();
+            return !socketedInputs.ContainsKey(socket);
+        }
+
+        public virtual bool SetInput(int socket, object item, StringBuilder failMsg)
+        {
+            CheckInputsReady();
+            if (socket >= NumInputs())
+                throw new ArgumentException("Bad socket.");
+
+            var ts = item as TimeSeries;
+            var mts = item as MVTimeSeries;
+            var lts = item as Longitudinal;
+            var mi = item as Model;
+            if (ts == null && mts == null && lts == null && mi == null)
+                return
+                    false; // failure when tsInput item is not of class TimeSeries or MVTimeSeries or Model of some kind
+
+            socketedInputs[socket] = item;
+
+            if (AllInputsValid())
+                Recompute();
+            return true;
+        }
+
+        public abstract string GetInputName(int socket);
+        public abstract string GetOutputName(int socket);
+
+        public virtual List<Type> GetAllowedInputTypesFor(int socket)
+        {
+            return new List<Type>();
+        }
+
+        //public virtual Color GetBackgroundColor()
+        //{
+        //    return Color.Honeydew;
+        //}
+
+        public abstract string GetDescription();
+
+        public abstract string GetShortDescription();
+        //public abstract Icon GetIcon();
+
+        public virtual object GetOutput(int socket)
+        {
+            if (outputs == null)
+                return null;
+            if (outputs.Count == 0)
+                return null;
+            if (ShouldBundleOutputs && outputs.Count > 1) // then bundle them together
+            {
+                if (socket != 0)
+                    throw new SocketException();
+                if (outputs == null)
+                    return null;
+                if (outputs.Count == 1)
+                    return outputs[0];
+                var mvts = new MVTimeSeries(outputs, false);
+                if (multivariateOutputPrefix != null)
+                    mvts.Title = multivariateOutputPrefix;
+                return mvts;
+            }
+
+            // otherwise just return them as they are
+            if (outputs == null)
+                return null;
+            if (socket < NumOutputs())
+                return outputs[socket];
+            throw new SocketException();
+        }
 
 
         /// <summary>
@@ -203,8 +280,6 @@ namespace CronoSeries.ABMath.ModelFramework.Transforms
             return sb.ToString();
         }
 
-        #region Nested type: InputType
-
         protected enum InputType
         {
             Invalid,
@@ -213,94 +288,5 @@ namespace CronoSeries.ABMath.ModelFramework.Transforms
             Longitudinal,
             Mixed
         }
-
-        #endregion
-
-        #region IConnectable Members
-
-        public abstract int NumInputs();
-        public abstract int NumOutputs();
-
-        [Browsable(false)] public string ToolTipText { get; set; }
-
-        public virtual List<Type> GetOutputTypesFor(int socket)
-        {
-            return null;
-        }
-
-        public bool InputIsFree(int socket)
-        {
-            CheckInputsReady();
-            return !socketedInputs.ContainsKey(socket);
-        }
-
-        public virtual bool SetInput(int socket, object item, StringBuilder failMsg)
-        {
-            CheckInputsReady();
-            if (socket >= NumInputs())
-                throw new ArgumentException("Bad socket.");
-
-            var ts = item as TimeSeries;
-            var mts = item as MVTimeSeries;
-            var lts = item as Longitudinal;
-            var mi = item as Model;
-            if (ts == null && mts == null && lts == null && mi == null)
-                return
-                    false; // failure when tsInput item is not of class TimeSeries or MVTimeSeries or Model of some kind
-
-            socketedInputs[socket] = item;
-
-            if (AllInputsValid())
-                Recompute();
-            return true;
-        }
-
-        public abstract string GetInputName(int socket);
-        public abstract string GetOutputName(int socket);
-
-        public virtual List<Type> GetAllowedInputTypesFor(int socket)
-        {
-            return new List<Type>();
-        }
-
-        //public virtual Color GetBackgroundColor()
-        //{
-        //    return Color.Honeydew;
-        //}
-
-        public abstract string GetDescription();
-
-        public abstract string GetShortDescription();
-        //public abstract Icon GetIcon();
-
-        public virtual object GetOutput(int socket)
-        {
-            if (outputs == null)
-                return null;
-            if (outputs.Count == 0)
-                return null;
-            if (ShouldBundleOutputs && outputs.Count > 1) // then bundle them together
-            {
-                if (socket != 0)
-                    throw new SocketException();
-                if (outputs == null)
-                    return null;
-                if (outputs.Count == 1)
-                    return outputs[0];
-                var mvts = new MVTimeSeries(outputs, false);
-                if (multivariateOutputPrefix != null)
-                    mvts.Title = multivariateOutputPrefix;
-                return mvts;
-            }
-
-            // otherwise just return them as they are
-            if (outputs == null)
-                return null;
-            if (socket < NumOutputs())
-                return outputs[socket];
-            throw new SocketException();
-        }
-
-        #endregion
     }
 }

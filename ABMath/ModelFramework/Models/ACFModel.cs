@@ -1,6 +1,4 @@
-﻿#region License Info
-
-//Component of Cronos Package, http://www.codeplex.com/cronos
+﻿//Component of Cronos Package, http://www.codeplex.com/cronos
 //Copyright (C) 2009, 2010 Anthony Brockwell
 
 //This program is free software; you can redistribute it and/or
@@ -16,8 +14,6 @@
 //You should have received a copy of the GNU General Public License
 //along with this program; if not, write to the Free Software
 //Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-
-#endregion
 
 using System;
 using System.Collections.Generic;
@@ -51,6 +47,8 @@ namespace CronoSeries.ABMath.ModelFramework.Models
         // timestamped at the point the predictor is available
 
         [NonSerialized] protected TimeSeries oneStepPredStd; // also aligned with what they are predicting
+
+        [NonSerialized] private DurbinLevinsonPredictor realTimePredictor;
         [NonSerialized] protected TimeSeries unstandardizedResiduals;
 
         public ACFModel(int maxLag)
@@ -88,6 +86,65 @@ namespace CronoSeries.ABMath.ModelFramework.Models
         {
             // nothing to do here: if there are some aspects of likelihood computation that can be reused with different parameters and the same data,
             // we would do that here
+        }
+
+        public virtual MathNet.Numerics.LinearAlgebra.Vector<double> ParameterToCube(
+            MathNet.Numerics.LinearAlgebra.Vector<double> param)
+        {
+            var cube = MathNet.Numerics.LinearAlgebra.Vector<double>.Build.Dense(param.Count);
+
+            cube[0] = Math.Exp(param[0] / muScale) / (1 + Math.Exp(param[0] * 1e-5)); // real to [0,1]
+            cube[1] = param[1] / (1 + param[1]); // real+ to [0,1]
+
+            for (var i = 0; i < maxLag; ++i)
+                cube[i + 2] = param[i + 2] / 2 + 0.5; // [-1,1] to [0,1]
+
+            return cube;
+        }
+
+        public virtual MathNet.Numerics.LinearAlgebra.Vector<double> CubeToParameter(
+            MathNet.Numerics.LinearAlgebra.Vector<double> cube)
+        {
+            var param = MathNet.Numerics.LinearAlgebra.Vector<double>.Build.Dense(2 + maxLag);
+            param[0] = Math.Log(cube[0] / (1 - cube[0])) * muScale;
+            param[1] = cube[1] / (1 - cube[1]);
+
+            for (var i = 0; i < maxLag; ++i)
+                param[2 + i] = cube[2 + i] * 2 - 1.0; // [0,1] to [-1,1]
+
+            return param;
+        }
+
+        public virtual void ResetRealTimePrediction()
+        {
+            realTimePredictor = new DurbinLevinsonPredictor(Mu, Autocovariance, 20000);
+        }
+
+        // for initializing from a time series
+        public virtual void Register(TimeSeries series)
+        {
+            for (var t = 0; t < series.Count; ++t)
+                Register(series.TimeStamp(t), series[t]);
+        }
+
+        // for registering both a value and an explanatory var. (ARMAX or regression model)
+        public virtual double Register(DateTime timeStamp, double value, double[] auxValues)
+        {
+            throw new ApplicationException("Should not be using auxiliary info with an ACFModel");
+        }
+
+        // for registering one item at a time
+        public virtual double Register(DateTime timeStamp, double value)
+        {
+            realTimePredictor.Register(value);
+            return realTimePredictor.CurrentPredictor;
+        }
+
+        public virtual DistributionSummary GetCurrentPredictor(DateTime futureTime)
+        {
+            var ds = new DistributionSummary
+                {Mean = realTimePredictor.CurrentPredictor, Variance = realTimePredictor.CurrentMSPE};
+            return ds;
         }
 
         public double Rho(int lag)
@@ -504,8 +561,6 @@ namespace CronoSeries.ABMath.ModelFramework.Models
             return localResiduals;
         }
 
-        #region Other Mathematical Support Functions
-
         protected static Complex ComplexPower(Complex c, double pow)
         {
             var r = Math.Sqrt(Math.Pow(c.Magnitude, 2));
@@ -513,79 +568,6 @@ namespace CronoSeries.ABMath.ModelFramework.Models
             var retval = new Complex(Math.Pow(r, pow), theta * pow);
             return retval;
         }
-
-        #endregion
-
-        #region IMLEEstimable Members
-
-        public virtual MathNet.Numerics.LinearAlgebra.Vector<double> ParameterToCube(
-            MathNet.Numerics.LinearAlgebra.Vector<double> param)
-        {
-            var cube = MathNet.Numerics.LinearAlgebra.Vector<double>.Build.Dense(param.Count);
-
-            cube[0] = Math.Exp(param[0] / muScale) / (1 + Math.Exp(param[0] * 1e-5)); // real to [0,1]
-            cube[1] = param[1] / (1 + param[1]); // real+ to [0,1]
-
-            for (var i = 0; i < maxLag; ++i)
-                cube[i + 2] = param[i + 2] / 2 + 0.5; // [-1,1] to [0,1]
-
-            return cube;
-        }
-
-        public virtual MathNet.Numerics.LinearAlgebra.Vector<double> CubeToParameter(
-            MathNet.Numerics.LinearAlgebra.Vector<double> cube)
-        {
-            var param = MathNet.Numerics.LinearAlgebra.Vector<double>.Build.Dense(2 + maxLag);
-            param[0] = Math.Log(cube[0] / (1 - cube[0])) * muScale;
-            param[1] = cube[1] / (1 - cube[1]);
-
-            for (var i = 0; i < maxLag; ++i)
-                param[2 + i] = cube[2 + i] * 2 - 1.0; // [0,1] to [-1,1]
-
-            return param;
-        }
-
-        #endregion
-
-        #region Real-Time Prediction Stuff
-
-        [NonSerialized] private DurbinLevinsonPredictor realTimePredictor;
-
-        public virtual void ResetRealTimePrediction()
-        {
-            realTimePredictor = new DurbinLevinsonPredictor(Mu, Autocovariance, 20000);
-        }
-
-        // for initializing from a time series
-        public virtual void Register(TimeSeries series)
-        {
-            for (var t = 0; t < series.Count; ++t)
-                Register(series.TimeStamp(t), series[t]);
-        }
-
-        // for registering both a value and an explanatory var. (ARMAX or regression model)
-        public virtual double Register(DateTime timeStamp, double value, double[] auxValues)
-        {
-            throw new ApplicationException("Should not be using auxiliary info with an ACFModel");
-        }
-
-        // for registering one item at a time
-        public virtual double Register(DateTime timeStamp, double value)
-        {
-            realTimePredictor.Register(value);
-            return realTimePredictor.CurrentPredictor;
-        }
-
-        public virtual DistributionSummary GetCurrentPredictor(DateTime futureTime)
-        {
-            var ds = new DistributionSummary
-                {Mean = realTimePredictor.CurrentPredictor, Variance = realTimePredictor.CurrentMSPE};
-            return ds;
-        }
-
-        #endregion
-
-        #region Auxiliary Functions
 
         public int NumAuxiliaryFunctions()
         {
@@ -636,7 +618,5 @@ namespace CronoSeries.ABMath.ModelFramework.Models
             output = approx;
             return true;
         }
-
-        #endregion
     }
 }

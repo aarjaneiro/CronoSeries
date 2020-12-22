@@ -1,30 +1,24 @@
-﻿#region License Info
+﻿/*
+Derived from the Cronos Package, http://www.codeplex.com/cronos
+Copyright (C) 2009 Anthony Brockwell
 
-//Component of Cronos Package, http://www.codeplex.com/cronos
-//Copyright (C) 2009 Anthony Brockwell
+This program is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License
+as published by the Free Software Foundation; either version 2
+of the License, or (at your option) any later version.
 
-//This program is free software; you can redistribute it and/or
-//modify it under the terms of the GNU General Public License
-//as published by the Free Software Foundation; either version 2
-//of the License, or (at your option) any later version.
-
-//This program is distributed in the hope that it will be useful,
-//but WITHOUT ANY WARRANTY; without even the implied warranty of
-//MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//GNU General Public License for more details.
-
-//You should have received a copy of the GNU General Public License
-//along with this program; if not, write to the Free Software
-//Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-
-#endregion
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+*/
 
 using System;
 using System.Collections.Generic;
 using System.Net.Sockets;
 using System.Numerics;
 using System.Text;
-using CronoSeries.ABMath.Forms.IridiumExtensions;
+using CronoSeries.ABMath.IridiumExtensions;
 using CronoSeries.ABMath.Miscellaneous;
 using CronoSeries.ABMath.ModelFramework.Data;
 using MathNet.Numerics;
@@ -41,6 +35,8 @@ namespace CronoSeries.ABMath.ModelFramework.Models
     {
         private const double UnitRootBarrier = 1e-3;
 
+        private const double muScale = 10.0;
+
         protected MathNet.Numerics.LinearAlgebra.Vector<double> autocovariance;
 
         [NonSerialized] protected TimeSeries oneStepPredictors; // timestamped to align with what they are predicting
@@ -49,6 +45,15 @@ namespace CronoSeries.ABMath.ModelFramework.Models
         protected TimeSeries oneStepPredictorsAtAvailability; // timestamped at the point the predictor is available
 
         [NonSerialized] protected TimeSeries oneStepPredStd; // also aligned with what they are predicting
+
+        private MathNet.Numerics.LinearAlgebra.Vector<double> rtacvf;
+        private int rtm;
+        private int rtminwidth;
+        private int rtn;
+        private MathNet.Numerics.LinearAlgebra.Vector<double> rtrs;
+        private Matrix<double> rtSubThetas;
+        private MathNet.Numerics.LinearAlgebra.Vector<double> rtvalues;
+        private MathNet.Numerics.LinearAlgebra.Vector<double> rtxhat;
 
         [NonSerialized] protected TimeSeries unstandardizedResiduals;
 
@@ -59,8 +64,8 @@ namespace CronoSeries.ABMath.ModelFramework.Models
         /// <param name="maOrder">moving average order</param>
         public ARMAModel(int arOrder, int maOrder)
         {
-            this.AROrder = arOrder;
-            this.MAOrder = maOrder;
+            AROrder = arOrder;
+            MAOrder = maOrder;
             TailDegreesOfFreedom = 0;
             LocalInitializeParameters();
         }
@@ -73,8 +78,8 @@ namespace CronoSeries.ABMath.ModelFramework.Models
         /// <param name="tailDOF">degrees of freedom of T-distribution for innovations</param>
         public ARMAModel(int arOrder, int maOrder, int tailDOF)
         {
-            this.AROrder = arOrder;
-            this.MAOrder = maOrder;
+            AROrder = arOrder;
+            MAOrder = maOrder;
             TailDegreesOfFreedom = tailDOF;
             LocalInitializeParameters();
         }
@@ -144,6 +149,164 @@ namespace CronoSeries.ABMath.ModelFramework.Models
         {
             // nothing to do here: if there are some aspects of likelihood computation that can be reused with different parameters and the same data,
             // we would do that here
+        }
+
+        public virtual MathNet.Numerics.LinearAlgebra.Vector<double> ParameterToCube(
+            MathNet.Numerics.LinearAlgebra.Vector<double> param)
+        {
+            var cube = MathNet.Numerics.LinearAlgebra.Vector<double>.Build.Dense(param.Count);
+
+            cube[0] = Math.Exp(param[0] / muScale) / (1 + Math.Exp(param[0] / muScale)); // real to [0,1]
+            cube[1] = param[1] / (1 + param[1]); // real+ to [0,1]
+            cube[2] = param[2] + 0.5; // [-0.5,0.5] to [0,1]
+
+            var backup = Parameters;
+            Parameters = param;
+            //Polynomial betaP = GetARPoly();
+            //Polynomial betaQ = GetMAPoly();
+            var betaP = GetARPoly();
+            var betaQ = GetMAPoly();
+            Parameters = backup;
+
+            var arcube = betaP.MapToCube(UnitRootBarrier);
+            var macube = betaQ.MapToCube(UnitRootBarrier);
+
+            for (var i = 0; i < AROrder; ++i)
+                cube[3 + i] = arcube[i];
+            for (var i = 0; i < MAOrder; ++i)
+                cube[3 + AROrder + i] = macube[i];
+
+            return cube;
+        }
+
+        public virtual MathNet.Numerics.LinearAlgebra.Vector<double> CubeToParameter(
+            MathNet.Numerics.LinearAlgebra.Vector<double> cube)
+        {
+            var param = MathNet.Numerics.LinearAlgebra.Vector<double>.Build.Dense(3 + AROrder + MAOrder);
+            param[0] = Math.Log(cube[0] / (1 - cube[0])) * muScale;
+            param[1] = cube[1] / (1 - cube[1]);
+            param[2] = cube[2] - 0.5;
+
+            var arCube = MathNet.Numerics.LinearAlgebra.Vector<double>.Build.Dense(AROrder);
+            for (var i = 0; i < AROrder; ++i)
+                arCube[i] = cube[3 + i];
+            var maCube = MathNet.Numerics.LinearAlgebra.Vector<double>.Build.Dense(MAOrder);
+            for (var i = 0; i < MAOrder; ++i)
+                maCube[i] = cube[3 + AROrder + i];
+
+            var betaP =
+                PolynomialExtensions.MapFromCube(arCube, UnitRootBarrier);
+            var betaQ =
+                PolynomialExtensions.MapFromCube(maCube, UnitRootBarrier);
+
+            for (var i = 0; i < AROrder; ++i)
+                param[3 + i] = -betaP[i + 1];
+
+            for (var i = 0; i < MAOrder; ++i)
+                param[3 + AROrder + i] = betaQ[i + 1];
+
+            return param;
+        }
+
+        public virtual void ResetRealTimePrediction()
+        {
+            rtm = Math.Max(AROrder, MAOrder);
+            rtacvf = ComputeACF(rtm + 1, false);
+
+            // then apply the innovations algorithm to compute $theta_{n,j}$s
+            rtminwidth = Math.Max(Math.Max(MAOrder, rtm - 1), 1);
+
+            //var thetas = new Matrix(nobs, minwidth);
+            rtSubThetas = Matrix<double>.Build.Dense(rtminwidth, rtminwidth);
+
+            rtxhat = MathNet.Numerics.LinearAlgebra.Vector<double>.Build.Dense(10000);
+            rtrs = MathNet.Numerics.LinearAlgebra.Vector<double>.Build.Dense(10000);
+            rtvalues = MathNet.Numerics.LinearAlgebra.Vector<double>.Build.Dense(10000);
+
+            rtn = 0;
+            rtxhat[0] = Mu;
+            rtrs[0] = KappaFunction(1, 1, rtm, rtacvf);
+        }
+
+        // for initializing from a time series
+        public virtual void Register(TimeSeries series)
+        {
+            for (var t = 0; t < series.Count; ++t)
+                Register(series.TimeStamp(t), series[t]);
+        }
+
+        // for registering both a value and an explanatory var. (ARMAX or regression model)
+        public virtual double Register(DateTime timeStamp, double value, double[] auxValues)
+        {
+            return Register(timeStamp, value); // for ARMA models, auxiliary is irrelevant
+        }
+
+        // for registering one item at a time
+        public virtual double Register(DateTime timeStamp, double value)
+        {
+            // first find $\theta_{n,q},\ldots,\theta_{n,1}$
+            double t1;
+            double sum;
+
+            rtvalues[rtn] = value;
+
+            ++rtn;
+            var n = rtn;
+            var startPt = Math.Max(n - rtminwidth, 0);
+            var n1M = (n - 1) % rtminwidth;
+
+            for (var k = startPt; k < n; ++k)
+            {
+                sum = KappaFunction(n + 1, k + 1, rtm, rtacvf);
+                for (var j = startPt; j < k; ++j)
+                {
+                    if (k - j - 1 < rtminwidth)
+                        t1 = rtSubThetas[(k - 1) % rtminwidth, k - j - 1];
+                    else
+                        t1 = 0.0;
+                    sum -= t1 * rtSubThetas[n1M, n - j - 1] * rtrs[j];
+                }
+
+                rtSubThetas[n1M, n - k - 1] = sum / rtrs[k];
+            }
+
+            // then find $r_n$
+            rtrs[n] = KappaFunction(n + 1, n + 1, rtm, rtacvf);
+            for (var j = Math.Max(n - rtminwidth, 0); j < n; ++j)
+            {
+                t1 = rtSubThetas[n1M, n - j - 1];
+                rtrs[n] -= t1 * t1 * rtrs[j];
+            }
+
+            // and finally work out $\hat{X}_{n+1}$
+            sum = 0.0;
+            if (n < rtm)
+            {
+                for (var j = 1; j <= Math.Min(n, rtminwidth); ++j)
+                    if (n - j < rtn)
+                        sum += rtSubThetas[n1M, j - 1] * (rtvalues[n - j] - rtxhat[n - j]);
+            }
+            else
+            {
+                for (var j = 1; j <= AROrder; ++j)
+                    if (n - j < rtn)
+                        sum += ARCoeff(j - 1) * (rtvalues[n - j] - Mu);
+                    else
+                        sum += ARCoeff(j - 1) * (rtxhat[n - j] - Mu);
+                for (var j = 1; j <= rtminwidth; ++j)
+                    if (n - j < rtn)
+                        sum += rtSubThetas[n1M, j - 1] * (rtvalues[n - j] - rtxhat[n - j]);
+            }
+
+            rtxhat[n] = sum + Mu;
+            return rtxhat[n];
+        }
+
+        public virtual DistributionSummary GetCurrentPredictor(DateTime futureTime)
+        {
+            var ds = new DistributionSummary {Mean = rtxhat[rtn], Variance = rtrs[rtn] * Sigma * Sigma};
+            // ds.FillGaussianQuantiles(0.01);
+            return ds;
         }
 
         public override int NumOutputs()
@@ -884,10 +1047,8 @@ namespace CronoSeries.ABMath.ModelFramework.Models
                     if (n < m)
                     {
                         for (j = 1; j <= Math.Min(n, minwidth); ++j)
-                        {
                             if (n - j < startData.Count)
                                 sum += subThetas[n1M, j - 1] * (startData[n - j] - xhat[n - j]);
-                        }
                     }
                     else
                     {
@@ -1055,71 +1216,6 @@ namespace CronoSeries.ABMath.ModelFramework.Models
             throw new IndexOutOfRangeException();
         }
 
-        #region IMLEEstimable Members
-
-        private const double muScale = 10.0;
-
-        public virtual MathNet.Numerics.LinearAlgebra.Vector<double> ParameterToCube(
-            MathNet.Numerics.LinearAlgebra.Vector<double> param)
-        {
-            var cube = MathNet.Numerics.LinearAlgebra.Vector<double>.Build.Dense(param.Count);
-
-            cube[0] = Math.Exp(param[0] / muScale) / (1 + Math.Exp(param[0] / muScale)); // real to [0,1]
-            cube[1] = param[1] / (1 + param[1]); // real+ to [0,1]
-            cube[2] = param[2] + 0.5; // [-0.5,0.5] to [0,1]
-
-            var backup = Parameters;
-            Parameters = param;
-            //Polynomial betaP = GetARPoly();
-            //Polynomial betaQ = GetMAPoly();
-            var betaP = GetARPoly();
-            var betaQ = GetMAPoly();
-            Parameters = backup;
-
-            var arcube = betaP.MapToCube(UnitRootBarrier);
-            var macube = betaQ.MapToCube(UnitRootBarrier);
-
-            for (var i = 0; i < AROrder; ++i)
-                cube[3 + i] = arcube[i];
-            for (var i = 0; i < MAOrder; ++i)
-                cube[3 + AROrder + i] = macube[i];
-
-            return cube;
-        }
-
-        public virtual MathNet.Numerics.LinearAlgebra.Vector<double> CubeToParameter(
-            MathNet.Numerics.LinearAlgebra.Vector<double> cube)
-        {
-            var param = MathNet.Numerics.LinearAlgebra.Vector<double>.Build.Dense(3 + AROrder + MAOrder);
-            param[0] = Math.Log(cube[0] / (1 - cube[0])) * muScale;
-            param[1] = cube[1] / (1 - cube[1]);
-            param[2] = cube[2] - 0.5;
-
-            var arCube = MathNet.Numerics.LinearAlgebra.Vector<double>.Build.Dense(AROrder);
-            for (var i = 0; i < AROrder; ++i)
-                arCube[i] = cube[3 + i];
-            var maCube = MathNet.Numerics.LinearAlgebra.Vector<double>.Build.Dense(MAOrder);
-            for (var i = 0; i < MAOrder; ++i)
-                maCube[i] = cube[3 + AROrder + i];
-
-            var betaP =
-                PolynomialExtensions.MapFromCube(arCube, UnitRootBarrier);
-            var betaQ =
-                PolynomialExtensions.MapFromCube(maCube, UnitRootBarrier);
-
-            for (var i = 0; i < AROrder; ++i)
-                param[3 + i] = -betaP[i + 1];
-
-            for (var i = 0; i < MAOrder; ++i)
-                param[3 + AROrder + i] = betaQ[i + 1];
-
-            return param;
-        }
-
-        #endregion
-
-        #region Long-Memory ACF Computation Support Functions
-
         /// <summary>
         ///     returns matrix containing functions required in Doornik and Ooms (or Oornik and Dooms?) paper
         /// </summary>
@@ -1249,10 +1345,6 @@ namespace CronoSeries.ABMath.ModelFramework.Models
             return Math.Exp(tx) * multFactor;
         }
 
-        #endregion
-
-        #region Other Mathematical Support Functions
-
         protected static Complex ComplexPower(Complex c, double pow)
         {
             var r = Math.Sqrt(Math.Pow(c.Magnitude, 2));
@@ -1306,123 +1398,5 @@ namespace CronoSeries.ABMath.ModelFramework.Models
 
             return 0;
         }
-
-        #endregion
-
-        #region Real-Time Prediction Stuff
-
-        private MathNet.Numerics.LinearAlgebra.Vector<double> rtacvf;
-        private int rtm;
-        private int rtminwidth;
-        private int rtn;
-        private MathNet.Numerics.LinearAlgebra.Vector<double> rtrs;
-        private Matrix<double> rtSubThetas;
-        private MathNet.Numerics.LinearAlgebra.Vector<double> rtvalues;
-        private MathNet.Numerics.LinearAlgebra.Vector<double> rtxhat;
-
-        public virtual void ResetRealTimePrediction()
-        {
-            rtm = Math.Max(AROrder, MAOrder);
-            rtacvf = ComputeACF(rtm + 1, false);
-
-            // then apply the innovations algorithm to compute $theta_{n,j}$s
-            rtminwidth = Math.Max(Math.Max(MAOrder, rtm - 1), 1);
-
-            //var thetas = new Matrix(nobs, minwidth);
-            rtSubThetas = Matrix<double>.Build.Dense(rtminwidth, rtminwidth);
-
-            rtxhat = MathNet.Numerics.LinearAlgebra.Vector<double>.Build.Dense(10000);
-            rtrs = MathNet.Numerics.LinearAlgebra.Vector<double>.Build.Dense(10000);
-            rtvalues = MathNet.Numerics.LinearAlgebra.Vector<double>.Build.Dense(10000);
-
-            rtn = 0;
-            rtxhat[0] = Mu;
-            rtrs[0] = KappaFunction(1, 1, rtm, rtacvf);
-        }
-
-        // for initializing from a time series
-        public virtual void Register(TimeSeries series)
-        {
-            for (var t = 0; t < series.Count; ++t)
-                Register(series.TimeStamp(t), series[t]);
-        }
-
-        // for registering both a value and an explanatory var. (ARMAX or regression model)
-        public virtual double Register(DateTime timeStamp, double value, double[] auxValues)
-        {
-            return Register(timeStamp, value); // for ARMA models, auxiliary is irrelevant
-        }
-
-        // for registering one item at a time
-        public virtual double Register(DateTime timeStamp, double value)
-        {
-            // first find $\theta_{n,q},\ldots,\theta_{n,1}$
-            double t1;
-            double sum;
-
-            rtvalues[rtn] = value;
-
-            ++rtn;
-            var n = rtn;
-            var startPt = Math.Max(n - rtminwidth, 0);
-            var n1M = (n - 1) % rtminwidth;
-
-            for (var k = startPt; k < n; ++k)
-            {
-                sum = KappaFunction(n + 1, k + 1, rtm, rtacvf);
-                for (var j = startPt; j < k; ++j)
-                {
-                    if (k - j - 1 < rtminwidth)
-                        t1 = rtSubThetas[(k - 1) % rtminwidth, k - j - 1];
-                    else
-                        t1 = 0.0;
-                    sum -= t1 * rtSubThetas[n1M, n - j - 1] * rtrs[j];
-                }
-
-                rtSubThetas[n1M, n - k - 1] = sum / rtrs[k];
-            }
-
-            // then find $r_n$
-            rtrs[n] = KappaFunction(n + 1, n + 1, rtm, rtacvf);
-            for (var j = Math.Max(n - rtminwidth, 0); j < n; ++j)
-            {
-                t1 = rtSubThetas[n1M, n - j - 1];
-                rtrs[n] -= t1 * t1 * rtrs[j];
-            }
-
-            // and finally work out $\hat{X}_{n+1}$
-            sum = 0.0;
-            if (n < rtm)
-            {
-                for (var j = 1; j <= Math.Min(n, rtminwidth); ++j)
-                {
-                    if (n - j < rtn)
-                        sum += rtSubThetas[n1M, j - 1] * (rtvalues[n - j] - rtxhat[n - j]);
-                }
-            }
-            else
-            {
-                for (var j = 1; j <= AROrder; ++j)
-                    if (n - j < rtn)
-                        sum += ARCoeff(j - 1) * (rtvalues[n - j] - Mu);
-                    else
-                        sum += ARCoeff(j - 1) * (rtxhat[n - j] - Mu);
-                for (var j = 1; j <= rtminwidth; ++j)
-                    if (n - j < rtn)
-                        sum += rtSubThetas[n1M, j - 1] * (rtvalues[n - j] - rtxhat[n - j]);
-            }
-
-            rtxhat[n] = sum + Mu;
-            return rtxhat[n];
-        }
-
-        public virtual DistributionSummary GetCurrentPredictor(DateTime futureTime)
-        {
-            var ds = new DistributionSummary {Mean = rtxhat[rtn], Variance = rtrs[rtn] * Sigma * Sigma};
-            // ds.FillGaussianQuantiles(0.01);
-            return ds;
-        }
-
-        #endregion
     }
 }

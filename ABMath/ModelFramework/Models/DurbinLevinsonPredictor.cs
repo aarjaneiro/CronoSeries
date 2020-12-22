@@ -9,13 +9,13 @@ namespace CronoSeries.ABMath.ModelFramework.Models
     /// </summary>
     public class DurbinLevinsonPredictor
     {
-        private double[] a, olda, rs, xhat, values;
         private readonly AutocovarianceFunction acvFunction;
         private readonly Vector<double> autocovariance;
-        private int curIndex;
 
         private readonly int maxN;
         private readonly double mean;
+        private double[] a, olda, rs, xhat, values;
+        private int curIndex;
 
         public DurbinLevinsonPredictor(double mean, AutocovarianceFunction acvFunction, int maxN)
         {
