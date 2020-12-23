@@ -20,7 +20,7 @@ Simply run
 ```
 doxygen DoxyGen
 ```
-and the directory `/out/` will appear. Opening index.html will bring you to the main page (which is mostly empty), though namespaces 
+and the directory `/docs/` will appear. Opening index.html will bring you to the main page (which is mostly empty), though namespaces 
 and classes, etc, are all accessible for the most part.
 
 

@@ -21,14 +21,17 @@
 
     <ItemGroup>
       <Compile Remove="Tests\**" />
+      <Compile Remove="out\**" />
     </ItemGroup>
 
     <ItemGroup>
       <EmbeddedResource Remove="Tests\**" />
+      <EmbeddedResource Remove="out\**" />
     </ItemGroup>
 
     <ItemGroup>
       <None Remove="Tests\**" />
+      <None Remove="out\**" />
     </ItemGroup>
 
 </Project>
