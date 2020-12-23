@@ -2,7 +2,7 @@
 
     <PropertyGroup>
         <TargetFramework>netcoreapp3.1</TargetFramework>
-        <PackageVersion>0.1.2</PackageVersion>
+        <PackageVersion>0.1.3</PackageVersion>
         <Copyright>GPLv3</Copyright>
         <Title>CronoSeries</Title>
         <Authors>Aaron Janeiro Stone</Authors>
