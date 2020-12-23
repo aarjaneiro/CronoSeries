@@ -55,7 +55,7 @@ namespace CronoSeries.TimeSeries.Models
                 return true;
             }
 
-            return false;
+            throw new ArgumentException(failMsg.ToString());
         }
 
         public override int NumOutputs()

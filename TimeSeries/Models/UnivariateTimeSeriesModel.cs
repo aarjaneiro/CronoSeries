@@ -74,7 +74,8 @@ namespace CronoSeries.TimeSeries.Models
         {
             if (socket < base.NumInputs())
                 return base.GetOutputTypesFor(socket);
-            return new List<Type> {typeof(Data.TimeSeries)}; // all the outputs of a univariate model are other time series
+            return new List<Type>
+                {typeof(Data.TimeSeries)}; // all the outputs of a univariate model are other time series
         }
     }
 }

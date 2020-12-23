@@ -201,6 +201,9 @@ namespace CronoSeries.TimeSeries.Models
         /// Locked parameters are held at current values in optimization.
         /// Free parameters are optimized.
         /// Consequential parameters are computed as a function of other parameters and the data.
+        /// <param name="numIterationsLDS">Number of parameters to consider per iteration</param>
+        /// <param name="numIterationsOpt">Number of iterations corresponding to free parameters</param>
+        /// <param name="consistencyPenalty">Penalty applied in LogLikelihood calculation</param>
         public virtual void FitByMLE(int numIterationsLDS, int numIterationsOpt,
             double consistencyPenalty,
             Optimizer.OptimizationCallback optCallback)

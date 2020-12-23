@@ -41,7 +41,8 @@ namespace CronoSeries.TimeSeries.Models
         private const double muScale = 10.0;
         private int maxLag;
 
-        [NonSerialized] protected Data.TimeSeries oneStepPredictors; // timestamped to align with what they are predicting
+        [NonSerialized]
+        protected Data.TimeSeries oneStepPredictors; // timestamped to align with what they are predicting
 
         [NonSerialized] protected Data.TimeSeries oneStepPredictorsAtAvailability;
         // timestamped at the point the predictor is available
@@ -340,7 +341,7 @@ namespace CronoSeries.TimeSeries.Models
 
         public override Data.TimeSeries SimulateData(List<DateTime> inputs, int randomSeed)
         {
-            var times = inputs as List<DateTime>;
+            var times = inputs;
             if (times == null)
                 return null; // inputs should be a list of DateTimes
 

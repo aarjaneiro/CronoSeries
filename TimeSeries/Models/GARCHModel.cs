@@ -49,11 +49,37 @@ namespace CronoSeries.TimeSeries.Models
 
         [NonSerialized] private Data.TimeSeries predictiveStdDevAtAvail;
 
+        /// <summary>
+        ///     <remarks>
+        ///         To depreciate, use other constructor with data when building a
+        ///         new model.
+        ///     </remarks>
+        ///     Basic constructor for an GARCH(m,s) model.
+        /// </summary>
+        /// <param name="modelType">Type of GARCH model to user</param>
+        /// <param name="dataOrder">m order</param>
+        /// <param name="intrinsicOrder">s order</param>
         public GARCHModel(GARCHType modelType, int dataOrder, int intrinsicOrder)
         {
             this.modelType = modelType;
             this.dataOrder = dataOrder;
             this.intrinsicOrder = intrinsicOrder;
+            LocalInitializeParameters();
+        }
+
+        /// <summary>
+        ///     basic constructor for an GARCH(m,s) model.
+        /// </summary>
+        /// <param name="modelType">Type of GARCH model to user</param>
+        /// <param name="dataOrder">m order</param>
+        /// <param name="intrinsicOrder">s order</param>
+        /// <param name="data">data to associate with this model</param>
+        public GARCHModel(GARCHType modelType, int dataOrder, int intrinsicOrder, Data.TimeSeries data)
+        {
+            this.modelType = modelType;
+            this.dataOrder = dataOrder;
+            this.intrinsicOrder = intrinsicOrder;
+            values = data;
             LocalInitializeParameters();
         }
 
@@ -522,7 +548,7 @@ namespace CronoSeries.TimeSeries.Models
 
         public override Data.TimeSeries SimulateData(List<DateTime> inputs, int simSeed)
         {
-            var times = inputs as List<DateTime>;
+            var times = inputs;
             if (times == null)
                 return null; // inputs should be a list of DateTimes
 

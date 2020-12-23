@@ -155,6 +155,19 @@ namespace CronoSeries.TimeSeries.Data
                 }
         }
 
+        /// <summary>
+        ///     A convenient setter only requiring dates and data as <see cref="List{T}" /> objects.
+        /// </summary>
+        /// <param name="dates">List of <see cref="DateTime" /></param>
+        /// <param name="data">List of <see cref="double" /></param>
+        /// <param name="title">Optional title for the Time Series</param>
+        public void DataFromLists(List<DateTime> dates, List<double> data, string title = null)
+        {
+            values = data;
+            times = dates;
+            Title = title;
+        }
+
         public void SubtractConstant(double k)
         {
             for (var i = 0; i < Count; ++i)

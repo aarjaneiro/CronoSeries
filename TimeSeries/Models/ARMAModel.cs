@@ -39,10 +39,12 @@ namespace CronoSeries.TimeSeries.Models
 
         protected MathNet.Numerics.LinearAlgebra.Vector<double> autocovariance;
 
-        [NonSerialized] protected Data.TimeSeries oneStepPredictors; // timestamped to align with what they are predicting
+        [NonSerialized]
+        protected Data.TimeSeries oneStepPredictors; // timestamped to align with what they are predicting
 
         [NonSerialized]
-        protected Data.TimeSeries oneStepPredictorsAtAvailability; // timestamped at the point the predictor is available
+        protected Data.TimeSeries
+            oneStepPredictorsAtAvailability; // timestamped at the point the predictor is available
 
         [NonSerialized] protected Data.TimeSeries oneStepPredStd; // also aligned with what they are predicting
 
@@ -58,7 +60,11 @@ namespace CronoSeries.TimeSeries.Models
         [NonSerialized] protected Data.TimeSeries unstandardizedResiduals;
 
         /// <summary>
-        ///     basic constructor for an ARMA(p,q) model with Gaussian innovations
+        ///     <remarks>
+        ///         To depreciate, use other constructor with data when
+        ///         building a new model
+        ///     </remarks>
+        ///     Basic constructor for an ARMA(p,q) model with Gaussian innovations
         /// </summary>
         /// <param name="arOrder">autoregressive order</param>
         /// <param name="maOrder">moving average order</param>
@@ -71,12 +77,47 @@ namespace CronoSeries.TimeSeries.Models
         }
 
         /// <summary>
+        ///     Basic constructor for an ARMA(p,q) model with Gaussian innovations
+        /// </summary>
+        /// <param name="arOrder">autoregressive order</param>
+        /// <param name="maOrder">moving average order</param>
+        /// <param name="data">data to associate with this model</param>
+        public ARMAModel(int arOrder, int maOrder, Data.TimeSeries data)
+        {
+            AROrder = arOrder;
+            MAOrder = maOrder;
+            TailDegreesOfFreedom = 0;
+            values = data;
+            LocalInitializeParameters();
+        }
+
+        /// <summary>
+        ///     basic constructor for an ARMA(p,q) model with Students T innovations
+        /// </summary>
+        /// <param name="arOrder">autoregressive order</param>
+        /// <param name="maOrder">moving average order</param>
+        /// <param name="data">data to associate with this model</param>
+        /// <param name="tailDOF">degrees of freedom of T-distribution for innovations</param>
+        public ARMAModel(int arOrder, int maOrder, Data.TimeSeries data, int tailDOF)
+        {
+            AROrder = arOrder;
+            MAOrder = maOrder;
+            TailDegreesOfFreedom = tailDOF;
+            values = data;
+            LocalInitializeParameters();
+        }
+
+        /// <summary>
+        ///     <remarks>
+        ///         To depreciate, use other constructor with data when
+        ///         building a new model
+        ///     </remarks>
         ///     constructor for an ARMA(p,q) model with Students T innovations
         /// </summary>
         /// <param name="arOrder">autoregressive order</param>
         /// <param name="maOrder">moving average order</param>
         /// <param name="tailDOF">degrees of freedom of T-distribution for innovations</param>
-        public ARMAModel(int arOrder, int maOrder, int tailDOF)
+        protected ARMAModel(int arOrder, int maOrder, int tailDOF)
         {
             AROrder = arOrder;
             MAOrder = maOrder;

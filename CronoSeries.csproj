@@ -2,7 +2,7 @@
 
     <PropertyGroup>
         <TargetFramework>netcoreapp3.1</TargetFramework>
-        <PackageVersion>0.1.0</PackageVersion>
+        <PackageVersion>0.1.2</PackageVersion>
         <Copyright>GPLv3</Copyright>
         <Title>CronoSeries</Title>
         <Authors>Aaron Janeiro Stone</Authors>
@@ -10,6 +10,7 @@
         <PackageProjectUrl>https://github.com/aarjaneiro/CronoSeries</PackageProjectUrl>
         <PackageLicenseUrl>https://github.com/aarjaneiro/CronoSeries/blob/master/LICENSE</PackageLicenseUrl>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+        <PackageTags>timeseries, garch, arch, arma</PackageTags>
     </PropertyGroup>
 
     <ItemGroup>

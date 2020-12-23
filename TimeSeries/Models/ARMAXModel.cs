@@ -54,8 +54,9 @@ namespace CronoSeries.TimeSeries.Models
         /// <param name="arOrder">autoregressive order</param>
         /// <param name="maOrder">moving average order</param>
         /// <param name="exOrder">number of exogenous inputs</param>
-        public ARMAXModel(int arOrder, int maOrder, int exOrder) :
-            base(arOrder, maOrder)
+        /// <param name="data">data to perform analysis on</param>
+        public ARMAXModel(int arOrder, int maOrder, int exOrder, Data.TimeSeries data) :
+            base(arOrder, maOrder, data)
         {
             numExogenous = exOrder;
             exogenous = new Data.TimeSeries[numExogenous];
@@ -69,8 +70,9 @@ namespace CronoSeries.TimeSeries.Models
         /// <param name="maOrder">moving average order</param>
         /// <param name="exOrder">number of exogenous inputs</param>
         /// <param name="tailDoF">degrees of freedom for t-distributed innovations</param>
-        public ARMAXModel(int arOrder, int maOrder, int exOrder, int tailDoF) :
-            base(arOrder, maOrder, tailDoF)
+        /// <param name="data">data to perform analysis on</param>
+        public ARMAXModel(int arOrder, int maOrder, int exOrder, int tailDoF, Data.TimeSeries data) :
+            base(arOrder, maOrder, data, tailDoF)
         {
             numExogenous = exOrder;
             exogenous = new Data.TimeSeries[numExogenous];
