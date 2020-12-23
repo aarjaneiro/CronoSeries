@@ -42,8 +42,7 @@ namespace CronoSeries.TimeSeries.Models
         [NonSerialized]
         protected Data.TimeSeries oneStepPredictors; // timestamped to align with what they are predicting
 
-        [NonSerialized]
-        protected Data.TimeSeries
+        [NonSerialized] protected Data.TimeSeries
             oneStepPredictorsAtAvailability; // timestamped at the point the predictor is available
 
         [NonSerialized] protected Data.TimeSeries oneStepPredStd; // also aligned with what they are predicting

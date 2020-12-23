@@ -127,7 +127,7 @@ namespace CronoSeries.TimeSeries.Data
                 var timeStamp = TimeStamp(t);
                 if (detailLevel > 1)
                     sb.AppendFormat("{0}\t", timeStamp.ToString("MM/dd/yyyy HH:mm:ss.ffff"));
-                sb.AppendFormat("{0:0.000000}", values[t]);
+                sb.AppendFormat("{0:0.000000}", Values[t]);
                 sb.AppendLine();
             }
 
@@ -136,8 +136,8 @@ namespace CronoSeries.TimeSeries.Data
 
         public void ParseFromFullString(string imported)
         {
-            values = new List<double>();
-            times = new List<DateTime>();
+            Values = new List<double>();
+            Times = new List<DateTime>();
 
             if (imported == null)
                 return;
@@ -149,8 +149,8 @@ namespace CronoSeries.TimeSeries.Data
             if (collection != null)
                 if (collection.Count == 1)
                 {
-                    values = collection[0].values;
-                    times = collection[0].times;
+                    Values = collection[0].Values;
+                    Times = collection[0].Times;
                     Title = collection[0].Title;
                 }
         }
@@ -163,22 +163,22 @@ namespace CronoSeries.TimeSeries.Data
         /// <param name="title">Optional title for the Time Series</param>
         public void DataFromLists(List<DateTime> dates, List<double> data, string title = null)
         {
-            values = data;
-            times = dates;
+            Values = data;
+            Times = dates;
             Title = title;
         }
 
         public void SubtractConstant(double k)
         {
             for (var i = 0; i < Count; ++i)
-                values[i] -= k;
+                Values[i] -= k;
         }
 
         public int NaNCount()
         {
             var count = 0;
             for (var t = 0; t < Count; ++t)
-                if (double.IsNaN(values[t]))
+                if (double.IsNaN(Values[t]))
                     ++count;
             return count;
         }
@@ -186,10 +186,10 @@ namespace CronoSeries.TimeSeries.Data
         public void RemoveNaNs()
         {
             for (var t = 0; t < Count; ++t)
-                if (double.IsNaN(values[t]))
+                if (double.IsNaN(Values[t]))
                 {
-                    values.RemoveAt(t);
-                    times.RemoveAt(t);
+                    Values.RemoveAt(t);
+                    Times.RemoveAt(t);
                     --t;
                 }
         }
@@ -202,7 +202,7 @@ namespace CronoSeries.TimeSeries.Data
         public double SampleMean()
         {
             double total = 0;
-            foreach (var x in values)
+            foreach (var x in Values)
                 total += x;
             total /= Count;
             return total;
@@ -212,7 +212,7 @@ namespace CronoSeries.TimeSeries.Data
         {
             double total = 0;
             double ss = 0;
-            foreach (var x in values)
+            foreach (var x in Values)
             {
                 total += x;
                 ss += x * x;
@@ -276,7 +276,7 @@ namespace CronoSeries.TimeSeries.Data
             {
                 double total = 0;
                 for (j = i; j < n; ++j)
-                    total += (values[j] - mean) * (values[j - i] - mean);
+                    total += (Values[j] - mean) * (Values[j - i] - mean);
                 acf[i] = total / n;
             }
 

@@ -81,12 +81,13 @@ namespace CronoSeries.TimeSeries.Models
 
         public int NumExogenous => numExogenous;
 
+        /// <inheritdoc />
         public override Vector<double> Parameters
         {
             get // return ARMA param vector, with gamma coeff. appended to end
                 =>
                     base.Parameters; // see the set method: it ensures that this is the proper length
-            set
+            protected set
             {
                 var v = Vector<double>.Build.Dense(NumParameters());
                 for (var i = 0; i < value.Count; ++i)

@@ -21,37 +21,44 @@ namespace CronoSeries.TimeSeries.Data
     [Serializable]
     public class TimeSeriesBase<T>
     {
-        public static readonly double ticksPerDay = new TimeSpan(24, 0, 0).Ticks;
-
-        protected List<DateTime> times;
-        protected List<T> values;
+        //public static readonly double ticksPerDay = new TimeSpan(24, 0, 0).Ticks;
 
         public TimeSeriesBase()
         {
-            values = new List<T>();
-            times = new List<DateTime>();
+            Values = new List<T>();
+            Times = new List<DateTime>();
             Title = "";
             Description = "";
         }
+
+        /// <summary>
+        ///     A list of DateTime values for each data point.
+        /// </summary>
+        public List<DateTime> Times { protected set; get; }
+
+        /// <summary>
+        ///     A list of data corresponding to each DateTime point in <see cref="Times" />.
+        /// </summary>
+        public List<T> Values { protected set; get; }
 
         public int Dimension { get; set; }
 
         public string Title { get; set; }
         public string Description { get; set; }
 
-        public int Count => values.Count;
+        public int Count => Values.Count;
 
-        public T this[int i] => values[i];
+        public T this[int i] => Values[i];
 
         public DateTime TimeStamp(int idx)
         {
-            return times[idx];
+            return Times[idx];
         }
 
         public int IndexAtOrBefore(DateTime time, out bool exact)
         {
             exact = false;
-            var sidx = times.BinarySearch(time);
+            var sidx = Times.BinarySearch(time);
             if (sidx < 0)
                 sidx = ~sidx - 1;
             else
@@ -75,12 +82,12 @@ namespace CronoSeries.TimeSeries.Data
                 return;
             }
 
-            var sidx = times.BinarySearch(time);
+            var sidx = Times.BinarySearch(time);
             if (sidx >= 0) // got a match
             {
                 if (forceOverwrite)
                 {
-                    values[sidx] = value;
+                    Values[sidx] = value;
                     return;
                 }
 
@@ -90,8 +97,8 @@ namespace CronoSeries.TimeSeries.Data
             var i0 = ~sidx - 1; // the index of the time before the searched time
             if (i0 == -1) // it goes at the front
             {
-                values.Insert(0, value);
-                times.Insert(0, time);
+                Values.Insert(0, value);
+                Times.Insert(0, time);
             }
             else if (i0 == Count - 1) // it goes at the end
             {
@@ -99,8 +106,8 @@ namespace CronoSeries.TimeSeries.Data
             }
             else // it goes in the middle somewhere
             {
-                values.Insert(i0 + 1, value);
-                times.Insert(i0 + 1, time);
+                Values.Insert(i0 + 1, value);
+                Times.Insert(i0 + 1, time);
             }
         }
 
@@ -117,7 +124,7 @@ namespace CronoSeries.TimeSeries.Data
                 ++i0;
 
             for (var t = i0; t <= i1; ++t)
-                retval.Add(TimeStamp(t), values[t], false);
+                retval.Add(TimeStamp(t), Values[t], false);
             return retval;
         }
 
@@ -147,20 +154,20 @@ namespace CronoSeries.TimeSeries.Data
                 return default;
             }
 
-            var sidx = times.BinarySearch(time);
+            var sidx = Times.BinarySearch(time);
             if (sidx >= 0)
             {
                 gotExactTime = true;
-                return values[sidx];
+                return Values[sidx];
             }
 
             var justBefore = ~sidx - 1;
             gotExactTime = false;
 
             if (justBefore == -1)
-                return values[0];
+                return Values[0];
 
-            return values[justBefore];
+            return Values[justBefore];
         }
 
 
@@ -169,12 +176,12 @@ namespace CronoSeries.TimeSeries.Data
             if (Count == 0)
                 throw new ApplicationException("Cannot delete point that does not exist.");
 
-            var sidx = times.BinarySearch(time);
+            var sidx = Times.BinarySearch(time);
             if (sidx < 0)
                 throw new ApplicationException("Cannot delete point that does not exist.");
 
-            values.RemoveAt(sidx);
-            times.RemoveAt(sidx);
+            Values.RemoveAt(sidx);
+            Times.RemoveAt(sidx);
         }
 
         /// <summary>
@@ -186,7 +193,7 @@ namespace CronoSeries.TimeSeries.Data
         {
             if (Count == 0)
                 return;
-            var sidx = times.BinarySearch(time);
+            var sidx = Times.BinarySearch(time);
             if (sidx < 0) // not found
             {
                 sidx = ~sidx - 1; // time just before the specified time
@@ -202,36 +209,36 @@ namespace CronoSeries.TimeSeries.Data
 
             if (sidx >= 0) // there is at least something to delete
             {
-                values.RemoveRange(0, sidx + 1);
-                times.RemoveRange(0, sidx + 1);
+                Values.RemoveRange(0, sidx + 1);
+                Times.RemoveRange(0, sidx + 1);
             }
         }
 
         public void SetValue(int idx, T value)
         {
-            values[idx] = value;
+            Values[idx] = value;
         }
 
         public DateTime GetFirstTime()
         {
-            if (times.Count > 0)
-                return times[0];
+            if (Times.Count > 0)
+                return Times[0];
             return DateTime.MaxValue;
         }
 
         public DateTime GetLastTime()
         {
-            if (times.Count > 0)
-                return times[times.Count - 1];
+            if (Times.Count > 0)
+                return Times[Times.Count - 1];
             return DateTime.MinValue; // return something arbitrary if it's empty
         }
 
         public TimeSpan GetCommonSamplingInterval()
         {
             var counts = new Dictionary<TimeSpan, int>(50);
-            for (var t = times.Count - 1; t > 0 && t > times.Count - 100; --t)
+            for (var t = Times.Count - 1; t > 0 && t > Times.Count - 100; --t)
             {
-                var interval = times[t] - times[t - 1];
+                var interval = Times[t] - Times[t - 1];
                 if (counts.ContainsKey(interval))
                     counts[interval] = counts[interval] + 1;
                 else
@@ -278,17 +285,17 @@ namespace CronoSeries.TimeSeries.Data
         {
             // do a little check
             var comesAtEnd = true;
-            if (times.Count > 0)
+            if (Times.Count > 0)
             {
-                var lastTime = times[times.Count - 1];
+                var lastTime = Times[Times.Count - 1];
                 if (time <= lastTime)
                     comesAtEnd = false;
             }
 
             if (comesAtEnd)
             {
-                times.Add(time);
-                values.Add(value);
+                Times.Add(time);
+                Values.Add(value);
             }
             else
             {
@@ -299,15 +306,15 @@ namespace CronoSeries.TimeSeries.Data
         public void RemoveFirst()
         {
             if (Count <= 0) return;
-            values.RemoveAt(0);
-            times.RemoveAt(0);
+            Values.RemoveAt(0);
+            Times.RemoveAt(0);
         }
 
         public void RemoveLast()
         {
             if (Count <= 0) return;
-            values.RemoveAt(values.Count - 1);
-            times.RemoveAt(times.Count - 1);
+            Values.RemoveAt(Values.Count - 1);
+            Times.RemoveAt(Times.Count - 1);
         }
     }
 }

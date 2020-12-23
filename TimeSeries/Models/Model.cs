@@ -64,7 +64,10 @@ namespace CronoSeries.TimeSeries.Models
 
         public double GoodnessOfFit { get; protected set; }
 
-        public abstract Vector<double> Parameters { get; set; }
+        /// <summary>
+        /// The parameters necessary for calculations pertaining to this model.
+        /// </summary>
+        public abstract Vector<double> Parameters { get; protected set; }
         public ParameterState[] ParameterStates { get; set; }
 
         public abstract int NumInputs();

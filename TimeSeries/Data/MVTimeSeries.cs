@@ -204,7 +204,7 @@ namespace CronoSeries.TimeSeries.Data
                 {
                     if (i != 0)
                         sb.Append("\t");
-                    sb.AppendFormat("{0:0.000000}", values[t][i]);
+                    sb.AppendFormat("{0:0.000000}", Values[t][i]);
                 }
 
                 sb.AppendLine();
@@ -215,8 +215,8 @@ namespace CronoSeries.TimeSeries.Data
 
         public void ParseFromFullString(string imported)
         {
-            values = new List<double[]>();
-            times = new List<DateTime>();
+            Values = new List<double[]>();
+            Times = new List<DateTime>();
 
             if (imported == null)
                 return;
@@ -227,8 +227,8 @@ namespace CronoSeries.TimeSeries.Data
             var collection = TimeSeries.GetTSFromReader(sreader, true);
             var mv = new MVTimeSeries(collection, false);
 
-            values = mv.values;
-            times = mv.times;
+            Values = mv.Values;
+            Times = mv.Times;
             Title = mv.Title;
             SubTitle = mv.SubTitle;
             Dimension = mv.Dimension;
@@ -243,7 +243,7 @@ namespace CronoSeries.TimeSeries.Data
             var count = 0;
             for (var t = 0; t < Count; ++t)
             for (var j = 0; j < Dimension; ++j)
-                if (double.IsNaN(values[t][j]))
+                if (double.IsNaN(Values[t][j]))
                     ++count;
             return count;
         }
@@ -282,8 +282,8 @@ namespace CronoSeries.TimeSeries.Data
             var numMissing = new int[Dimension];
             for (var t = 0; t < Count; ++t)
             for (var j = 0; j < Dimension; ++j)
-                if (!double.IsNaN(values[t][j]))
-                    retval[j] += values[t][j];
+                if (!double.IsNaN(Values[t][j]))
+                    retval[j] += Values[t][j];
                 else
                     ++numMissing[j];
             for (var j = 0; j < Dimension; ++j)
@@ -310,7 +310,7 @@ namespace CronoSeries.TimeSeries.Data
                 for (var k = 0; k < Dimension; ++k)
                 for (var l = 0; l < Dimension; ++l)
                 {
-                    var tx = (values[j][k] - mean[k]) * (values[j - i][l] - mean[l]);
+                    var tx = (Values[j][k] - mean[k]) * (Values[j - i][l] - mean[l]);
                     if (!double.IsNaN(tx))
                         total[k, l] += tx;
                 }

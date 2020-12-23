@@ -88,7 +88,7 @@ namespace CronoSeries.TimeSeries.Models
                 return parmVec;
             }
 
-            set
+            protected set
             {
                 // unbundle from the vector into all the parameters
                 if (value.Count != NumParameters)

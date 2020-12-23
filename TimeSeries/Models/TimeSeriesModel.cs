@@ -25,7 +25,8 @@ namespace CronoSeries.TimeSeries.Models
     [Serializable]
     public abstract class TimeSeriesModel : Model
     {
-        public override Vector<double> Parameters { get; set; }
+        /// <inheritdoc />
+        public override Vector<double> Parameters { get; protected set; }
 
         public override int NumInputs()
         {
